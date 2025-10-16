@@ -9,6 +9,7 @@ import cors from "cors";
 import "./config/passport.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import appConfigRoutes from "./routes/appConfig.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use(passport.session());
 const routePrefix = "/api/v1";
 app.use(`${routePrefix}/auth`, authRoutes);
 app.use(`${routePrefix}/users`, userRoutes);
+app.use(`${routePrefix}/app-config`, appConfigRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running....");
