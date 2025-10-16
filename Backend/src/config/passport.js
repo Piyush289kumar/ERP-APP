@@ -24,9 +24,9 @@ passport.use(
             provider: "google",
           });
         }
-        done(null, newUser);
+        done(null, user);
       } catch (error) {
-        done(err, null);
+        done(error, null);
       }
     }
   )
