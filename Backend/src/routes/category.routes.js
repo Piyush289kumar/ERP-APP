@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { getCategories } from "../controllers/category.controller.js";
+import {
+  getCategories,
+  modifyCategory,
+} from "../controllers/category.controller.js";
 
 const router = Router();
 
@@ -13,5 +16,7 @@ router.get(
   },
   getCategories
 );
+
+router.post("/", ensureAuth, modifyCategory);
 
 export default router;
