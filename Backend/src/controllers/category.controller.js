@@ -116,3 +116,37 @@ export const modifyCategory = async (req, res) => {
     res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
+
+export const destroyCategoryBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params; // Use URL param
+
+    if (!slug) {
+      return res.status(400).json({ message: "Category slug is required." });
+    }
+
+    const category = await Category.findOne({ slug });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    // Remove reference from parent category
+    if (category.parentCategory) {
+      const parent = await Category.findById(category.parentCategory);
+      if (parent) {
+        parent.subCategories = parent.subCategories.filter(
+          (subId) => subId.toString() !== category._id.toString()
+        );
+        await parent.save();
+      }
+    }
+
+    await Category.findByIdAndDelete(category._id);
+
+    return res
+      .status(200)
+      .json({ message: "Category is deleted successfully.", slug });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
