@@ -1,3 +1,4 @@
+import slugify from "slugify";
 import Blog from "../models/blogs/blog.model.js";
 
 export const getAllFeatureBlogs = async (req, res) => {
@@ -7,6 +8,102 @@ export const getAllFeatureBlogs = async (req, res) => {
       return res.status(404).json({ message: "Blogs not found." });
     }
     return res.status(200).json({ message: "Blog found.", data: blogs });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+export const modifyBlogBySlug = async (req, res) => {
+  try {
+    const {
+      id,
+      title,
+      category,
+      thumbnail,
+      gallery_images,
+      video_link,
+      read_time,
+      short_description,
+      description,
+      seo,
+      isActive,
+      isFeature,
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ message: "Title is required." });
+    }
+
+    // Generate Slug via Blog Title if Slug is missing
+    const slug = slugify(title, { lower: true, strict: true });
+
+    // Check if Blog already exists when Creating new
+    if (!id) {
+      const existing = await Blog.findOne({ slug });
+      if (existing) {
+        return res
+          .status(400)
+          .json({ message: "Blog with this name already exits." });
+      }
+    }
+
+    let blog;
+    // If `id` exists -> Update Blog
+    if (id) {
+      blog = await Blog.findById(id);
+
+      if (!blog) {
+        return res.status(404).json({ message: "Blog is not found." });
+      }
+
+      // Update Fields
+      blog.title = title || blog.title;
+      blog.slug = slug || blog.slug;
+      blog.description = description || blog.description;
+      blog.category = category || blog.category;
+      blog.thumbnail = thumbnail || blog.thumbnail;
+      blog.gallery_images = gallery_images || blog.gallery_images;
+      blog.video_link = video_link || blog.video_link;
+      blog.read_time = read_time || blog.read_time;
+      blog.short_description = short_description || blog.short_description;
+      blog.description = description || blog.description;
+      blog.seo = seo || blog.seo;
+      blog.isActive = isActive ?? blog.isActive;
+      blog.isFeature = isFeature ?? blog.isFeature;
+      blog.updatedBy = req.user._id;
+
+      await blog.save();
+
+      return res.status(200).json({
+        message: "Blog updated successfully.",
+        blog,
+      });
+    } else {
+      // Else -> Create a New Category
+
+      blog = await Blog.create({
+        title,
+        slug,
+        category,
+        thumbnail,
+        gallery_images,
+        video_link,
+        read_time,
+        short_description,
+        description,
+        seo,
+        isActive,
+        isFeature,
+        createdBy: req.user._id,
+      });
+
+      return res.status(201).json({
+        message: "Blog created successfully.",
+        blog,
+      });
+    }
   } catch (error) {
     return res
       .status(500)
