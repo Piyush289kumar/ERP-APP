@@ -1,13 +1,77 @@
 import slugify from "slugify";
 import Blog from "../models/blogs/blog.model.js";
 
+// Fetch all blogs (with filters, pagination, and search)
+export const getAllBlogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = "", category, isActive } = req.query;
+    const query = {};
+    if (category) query.category = category;
+    if (isActive !== undefined) query.isActive = isActive === "true";
+
+    // Text Search (on Title, Description, MetaKeywords)
+    if (search) query.$text = { $search: search };
+
+    const blogs = await Blog.find(query)
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await Blog.countDocuments(query);
+
+    res.status(200).json({
+      message: "Blogs fetched successfully.",
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / limit),
+      },
+      data: blogs,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Fetch all featured blogs
+
 export const getAllFeatureBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find();
-    if (!blogs) {
-      return res.status(404).json({ message: "Blogs not found." });
+    const blogs = await Blog.find({ isFeature: true, isActive: true })
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    if (!blogs.length) {
+      return res.status(404).json({ message: "No featured blogs found." });
     }
-    return res.status(200).json({ message: "Blog found.", data: blogs });
+
+    return res
+      .status(200)
+      .json({ message: "Featured blogs fetched successfully.", data: blogs });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Get a single blog by slug
+export const getBlogBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const blog = await Blog.findOne({ slug })
+      .populate("category", "name slug")
+      .populate("createdBy", "name email");
+
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found." });
+    }
+
+    res.status(200).json({ message: "Blog fetched successfully.", data: blog });
   } catch (error) {
     return res
       .status(500)
