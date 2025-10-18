@@ -79,6 +79,8 @@ export const getBlogBySlug = async (req, res) => {
   }
 };
 
+// Create or Update a blog (by ID if exists)
+
 export const modifyBlogBySlug = async (req, res) => {
   try {
     const {
@@ -168,6 +170,30 @@ export const modifyBlogBySlug = async (req, res) => {
         blog,
       });
     }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Delete blog by slug
+
+export const destroyBlogBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug || typeof slug !== "string") {
+      return res.status(400).json({ message: "Valid slug is required." });
+    }
+
+    const deleteBlog = await Blog.findOneAndDelete({ slug });
+    if (!deleteBlog) {
+      return res
+        .status(404)
+        .json({ message: `No blog found with slug: ${slug}.` });
+    }
+
+    return res.status(200).json({ message: "Blog delete successfully.", slug });
   } catch (error) {
     return res
       .status(500)

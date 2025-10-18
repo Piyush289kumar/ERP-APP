@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  destroyBlogBySlug,
   getAllBlogs,
   getAllFeatureBlogs,
   getBlogBySlug,
@@ -9,7 +10,6 @@ import { ensureAuth } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-
 // Public Routes
 
 router.get("/", getAllBlogs);
@@ -18,5 +18,6 @@ router.get("/:slug", getBlogBySlug);
 
 // Protected (Admin/Author) Routes
 router.post("/", ensureAuth, modifyBlogBySlug);
+router.delete("/:slug", ensureAuth, destroyBlogBySlug);
 
 export default router;
