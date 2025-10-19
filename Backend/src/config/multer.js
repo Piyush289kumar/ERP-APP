@@ -14,15 +14,16 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, uniqueName);
   },
 });
 
 // File Type Validation (images + videos)
 const fileFilter = (req, file, cb) => {
-  const allowed = /\.(jpg|jpeg|png|webp|gif|mp4|mov|avi)$/; // ✅ RegExp
   const ext = path.extname(file.originalname).toLowerCase();
+  const allowed = /\.(jpg|jpeg|png|webp|gif|mp4|mov|avi)$/; // ✅ RegExp
   if (allowed.test(ext)) {
     cb(null, true);
   } else {
@@ -33,7 +34,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10 MB per file
 });
 
 export default upload;
