@@ -1,5 +1,9 @@
 import slugify from "slugify";
 import Blog from "../models/blogs/blog.model.js";
+import {
+  destroyFromCloudinary,
+  uploadToCloudinary,
+} from "../utils/cloudinaryService.js";
 
 // Fetch all blogs (with filters, pagination, and search)
 export const getAllBlogs = async (req, res) => {
@@ -116,6 +120,28 @@ export const modifyBlogBySlug = async (req, res) => {
     }
 
     let blog;
+    let thumbnailUrl = null;
+    let galleryUrls = [];
+
+    // Upload thumbnail if provided
+    if (req.files?.thumbnail?.[0]?.path) {
+      const uploadThumb = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "blogs/thumbnails"
+      );
+      thumbnailUrl = uploadThumb.secure_url;
+    }
+
+    // Upload multiple gallery images
+    if (req.files?.gallery_images) {
+      const uploadPromises = req.files.gallery_images.map((file) =>
+        uploadToCloudinary(file.path, "blogs/gallery")
+      );
+
+      const uploadedGallery = await Promise.all(uploadPromises);
+      galleryUrls = uploadedGallery.map((img) => img.secure_url);
+    }
+
     // If `id` exists -> Update Blog
     if (id) {
       blog = await Blog.findById(id);
@@ -124,13 +150,22 @@ export const modifyBlogBySlug = async (req, res) => {
         return res.status(404).json({ message: "Blog is not found." });
       }
 
+      // If New thumbnail uploaded, delete old one
+
+      if (thumbnailUrl && blog.thumbnail) {
+        const oldPublicId = blog.thumbnail.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`blogs/thumbnails/${oldPublicId}`);
+      }
+
       // Update Fields
       blog.title = title || blog.title;
       blog.slug = slug || blog.slug;
       blog.description = description || blog.description;
       blog.category = category || blog.category;
-      blog.thumbnail = thumbnail || blog.thumbnail;
-      blog.gallery_images = gallery_images || blog.gallery_images;
+      blog.thumbnail = thumbnailUrl || blog.thumbnail;
+      blog.gallery_images = galleryUrls.length
+        ? galleryUrls
+        : blog.gallery_images;
       blog.video_link = video_link || blog.video_link;
       blog.read_time = read_time || blog.read_time;
       blog.short_description = short_description || blog.short_description;
@@ -153,8 +188,8 @@ export const modifyBlogBySlug = async (req, res) => {
         title,
         slug,
         category,
-        thumbnail,
-        gallery_images,
+        thumbnail: thumbnailUrl,
+        gallery_images: galleryUrls,
         video_link,
         read_time,
         short_description,
@@ -186,12 +221,28 @@ export const destroyBlogBySlug = async (req, res) => {
       return res.status(400).json({ message: "Valid slug is required." });
     }
 
-    const deleteBlog = await Blog.findOneAndDelete({ slug });
-    if (!deleteBlog) {
+    const blog = await Blog.findOne({ slug });
+    if (!blog) {
       return res
         .status(404)
         .json({ message: `No blog found with slug: ${slug}.` });
     }
+
+    // Delete Cloudinary files
+    if (blog.thumbnail) {
+      const publicId = blog.thumbnail.split("/").pop().split(".")[0];
+      await destroyFromCloudinary(`blogs/thumbnails/${publicId}`);
+    }
+
+    if (blog.gallery_images?.length) {
+      const deletePromises = blog.gallery_images.map((img) => {
+        const publicId = img.thumbnail.split("/").pop().split(".")[0];
+        return destroyFromCloudinary(`blogs/gallery/${publicId}`);
+      });
+      await Promise.all(deletePromises);
+    }
+
+    await Blog.findByIdAndDelete(blog._id);
 
     return res.status(200).json({ message: "Blog delete successfully.", slug });
   } catch (error) {
