@@ -1,4 +1,5 @@
 import cloudinary from "../config/cloudinary.js";
+import fs from "node:fs";
 
 /*
     Upload file to cloudinary
@@ -14,9 +15,24 @@ export const uploadToCloudinary = async (
       resource_type: "auto", // auto-detect image/video/pdf
       transformation: [{ quality: "auto", fetch_format: "auto" }], // optimize
     });
+
+    // Auto Delete temp file after successful upload
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (err) console.warn("Failed to delete temp file:", err.message);
+      });
+    }
+
     return result;
   } catch (error) {
     console.error("Cloudinary upload failed:", error.message);
+
+    // Ensure even failed uploads clean temp files
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (err) console.warn("Failed to delete temp file:", err.message);
+      });
+    }
     throw new Error("Image upload failed.");
   }
 };

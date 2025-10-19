@@ -236,7 +236,7 @@ export const destroyBlogBySlug = async (req, res) => {
 
     if (blog.gallery_images?.length) {
       const deletePromises = blog.gallery_images.map((img) => {
-        const publicId = img.thumbnail.split("/").pop().split(".")[0];
+        const publicId = img.split("/").pop().split(".")[0];
         return destroyFromCloudinary(`blogs/gallery/${publicId}`);
       });
       await Promise.all(deletePromises);
