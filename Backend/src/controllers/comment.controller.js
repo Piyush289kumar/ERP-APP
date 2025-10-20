@@ -1,5 +1,5 @@
-import Blog from "../models/blogs/blog.model";
-import Comment from "../models/blogs/comment.model";
+import Blog from "../models/blogs/blog.model.js";
+import Comment from "../models/blogs/comment.model.js";
 
 // Create a new Comment or Reply
 export const addComment = async (req, res) => {
@@ -71,19 +71,10 @@ export const toggleLike = async (req, res) => {
       return res.status(404).json({ message: "Comment not found." });
     }
 
-    const isLiked = comment.likes.includes(userId);
-
-    if (isLiked) {
-      comment.likes.pull(userId);
-    } else {
-      comment.likes.push(userId);
-      comment.dislikes.pull(userId);
-    }
-
-    await comment.save();
+    await comment.toggleLike(userId);
 
     return res.status(200).json({
-      message: isLiked ? "Comment unliked" : "Comment liked.",
+      message: "Like status updated.",
       likesCount: comment.likes.length,
     });
   } catch (error) {
@@ -104,19 +95,10 @@ export const toggleDislike = async (req, res) => {
       return res.status(404).json({ message: "Comment not found." });
     }
 
-    const isDisliked = comment.dislikes.includes(userId);
-
-    if (isDisliked) {
-      comment.dislikes.pull(userId);
-    } else {
-      comment.dislikes.push(userId);
-      comment.likes.pull(userId);
-    }
-
-    await comment.save();
+    await comment.toggleDislike(userId);
 
     return res.status(200).json({
-      message: isDisliked ? "Dislike removed." : "Comment disliked.",
+      message: "Dislike status updated.",
       dislikesCount: comment.dislikes.length,
     });
   } catch (error) {

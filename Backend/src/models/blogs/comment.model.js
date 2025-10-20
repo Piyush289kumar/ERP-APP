@@ -55,16 +55,40 @@ commentSchema.virtual("replies", {
   foreignField: "parentComment",
 });
 
-// Method : Like/Unlike Comment
-commentSchema.method.toggleLink = function (userId) {
-  const index = this.likes.indexOf(userId);
-  if (index === -1) {
-    this.dislikes.push(userId);
-    this.likes = this.likes.filter((id) => id.toString() !== userId.toString());
+// ✅ Method: Toggle Like
+commentSchema.methods.toggleLike = async function (userId) {
+  const userStr = userId.toString();
+  const liked = this.likes.some((id) => id.toString() === userStr);
+
+  if (liked) {
+    // Unlike
+    this.likes = this.likes.filter((id) => id.toString() !== userStr);
   } else {
-    this.dislikes.splice(index, 1);
+    // Like and remove from dislikes
+    this.likes.push(userId);
+    this.dislikes = this.dislikes.filter((id) => id.toString() !== userStr);
   }
-  return this.save();
+
+  await this.save();
+  return this;
+};
+
+// ✅ Method: Toggle Dislike
+commentSchema.methods.toggleDislike = async function (userId) {
+  const userStr = userId.toString();
+  const disliked = this.dislikes.some((id) => id.toString() === userStr);
+
+  if (disliked) {
+    // Undo dislike
+    this.dislikes = this.dislikes.filter((id) => id.toString() !== userStr);
+  } else {
+    // Dislike and remove from likes
+    this.dislikes.push(userId);
+    this.likes = this.likes.filter((id) => id.toString() !== userStr);
+  }
+
+  await this.save();
+  return this;
 };
 
 // Virtual for JSON output

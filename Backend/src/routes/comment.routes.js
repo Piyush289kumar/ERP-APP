@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ensureAuth } from "../middleware/authMiddleware";
+import { ensureAuth } from "../middleware/authMiddleware.js";
 import {
   addComment,
   destroyCommentById,
@@ -7,7 +7,7 @@ import {
   toggleDislike,
   toggleLike,
   updateComment,
-} from "../controllers/comment.controller";
+} from "../controllers/comment.controller.js";
 
 const router = Router();
 
