@@ -7,6 +7,7 @@ import {
   modifyBlogBySlug,
 } from "../controllers/blog.controller.js";
 import { ensureAuth } from "../middleware/authMiddleware.js";
+import upload from "../config/multer.js";
 
 const router = Router();
 
