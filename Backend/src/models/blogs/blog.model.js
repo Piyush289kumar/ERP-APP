@@ -120,8 +120,18 @@ blogSchema.pre("validate", function (next) {
   next();
 });
 
+// Virtual Fields
+
+// Blog URL
 blogSchema.virtual("url").get(function () {
   return `/blog/${this.slug}`;
+});
+
+// Blog Comments
+blogSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "blog",
 });
 
 // Static : Fetch all active blogs

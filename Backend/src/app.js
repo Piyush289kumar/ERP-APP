@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.routes.js";
 import appConfigRoutes from "./routes/appConfig.routes.js";
 import categoriesRoutes from "./routes/category.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
+import commentRoutes from "./routes/comment.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use(`${routePrefix}/users`, userRoutes);
 app.use(`${routePrefix}/app-config`, appConfigRoutes);
 app.use(`${routePrefix}/categories`, categoriesRoutes);
 app.use(`${routePrefix}/blog`, blogRoutes);
+app.use(`${routePrefix}/comments`, commentRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running....");
