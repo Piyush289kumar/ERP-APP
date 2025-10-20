@@ -1,23 +1,24 @@
 ### Get All Blogs
-GET http://localhost:3000/api/v1/blog
+GET {{baseUrl}}/blog
 Accept: application/json
 
 ###
 
 ### Get Featured Blogs
-GET http://localhost:3000/api/v1/blog/featured
+GET {{baseUrl}}/blog/featured
 Accept: application/json
 
 ###
 
 ### Get Blog by Slug
-GET http://localhost:3000/api/v1/blog/sample-blog-slug
+GET {{baseUrl}}/blog/blog-4
 Accept: application/json
+
 
 ###
 
 ### Create New Blog (with images)
-POST http://localhost:3000/api/v1/blog
+POST {{baseUrl}}/blog
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
@@ -47,7 +48,7 @@ Content-Type: image/jpeg
 ###
 
 ### Update Blog
-POST http://localhost:3000/api/v1/blog
+POST {{baseUrl}}/blog
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
@@ -64,6 +65,6 @@ Updated Blog Title
 ###
 
 ### Delete Blog by Slug
-DELETE http://localhost:3000/api/v1/blog/sample-blog-slug
+DELETE {{baseUrl}}/blog/sample-blog-slug
 Authorization: Bearer {{token}}
 Accept: application/json

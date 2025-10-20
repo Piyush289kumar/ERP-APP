@@ -1,0 +1,4 @@
+### Get User Profile (Protected)
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{token}}
+Accept: application/json
