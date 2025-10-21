@@ -8,7 +8,7 @@ const gallerySchema = new mongoose.Schema(
       ref: "Category",
       default: null,
     },
-    images: [{ type: String, default: null }],
+    image: { type: String, default: null },
 
     isActive: { type: Boolean, default: true },
 
