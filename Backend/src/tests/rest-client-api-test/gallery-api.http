@@ -1,0 +1,3 @@
+### Get All Gallery
+GET {{baseUrl}}/gallery
+Accept: application/json
