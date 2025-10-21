@@ -1,8 +1,10 @@
 import Router from "express";
 import {
+  destroyGalleryById,
   getAllActiveGallery,
   getAllActiveGalleryById,
   getAllGallery,
+  getGalleryById,
   modifyGallery,
 } from "../controllers/gallery.controller.js";
 import { ensureAuth } from "../middleware/authMiddleware.js";
@@ -13,7 +15,7 @@ const router = Router();
 // Public Routes
 router.get("/", getAllGallery);
 router.get("/active", getAllActiveGallery);
-router.get("/:id", getAllActiveGalleryById);
+router.get("/:id", getGalleryById);
 
 // Protected (Admin/Author) Routes
 router.post(
@@ -22,5 +24,6 @@ router.post(
   upload.fields([{ name: "galleryMedia", maxCount: 1 }]),
   modifyGallery
 );
+router.delete("/:id", ensureAuth, destroyGalleryById);
 
 export default router;

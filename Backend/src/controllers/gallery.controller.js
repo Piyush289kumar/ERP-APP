@@ -56,7 +56,7 @@ export const getAllActiveGallery = async (req, res) => {
 
 // Get Active Gallery By ID  (Public)
 
-export const getAllActiveGalleryById = async (req, res) => {
+export const getGalleryById = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -67,6 +67,7 @@ export const getAllActiveGalleryById = async (req, res) => {
     const gallery = await Gallery.findById(id)
       .populate("category", "name slug")
       .lean();
+
     if (!gallery) {
       return res.status(404).json({ message: "No gallery by ID found." });
     }
@@ -159,6 +160,43 @@ export const modifyGallery = async (req, res) => {
       });
     }
   } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Delete Gallery by ID
+export const destroyGalleryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Gallery ID is required." });
+    }
+
+    const gallery = await Gallery.findOneAndDelete(id);
+
+    if (!gallery) {
+      return res.status(404).json({ message: "Gallery not found." });
+    }
+
+    // Delete Cloudinary image if exists
+    if (gallery.image) {
+      try {
+        const oldPublicId = gallery.image.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`gallery/media/${oldPublicId}`);
+      } catch (err) {
+        console.warn("Cloudinary cleanup failed:", err.message);
+      }
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Gallery Delete by ID successfully." });
+  } catch (error) {
+    console.error("Error while Delete Gallery by ID:", error.message);
+
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });

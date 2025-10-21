@@ -10,6 +10,10 @@ Accept: application/json
 GET {{baseUrl}}/gallery/68f77b11341816f30871aedd
 Accept: application/json
 
+### Delect Gallery By ID - (Admin)
+DELETE {{baseUrl}}/gallery/68f77b11341816f30871aedd
+Authorization: Bearer {{token}}
+Accept: application/json
 
 ### Modifiy Gallery
 POST {{baseUrl}}/gallery
