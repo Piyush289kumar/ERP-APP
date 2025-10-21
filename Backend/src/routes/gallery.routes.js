@@ -1,8 +1,7 @@
 import Router from "express";
 import {
   destroyGalleryById,
-  getAllActiveGallery,
-  getAllActiveGalleryById,
+  getAllActiveGallery,  
   getAllGallery,
   getGalleryById,
   modifyGallery,
