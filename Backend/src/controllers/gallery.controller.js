@@ -4,58 +4,99 @@ import {
   uploadToCloudinary,
 } from "../utils/cloudinaryService.js";
 
-// Get All Gallery
+// Get All Gallery (Admin)
+
 export const getAllGallery = async (req, res) => {
   try {
     const gallery = await Gallery.find()
-      .populate("Category", "name slug")
-      .populate("User", "name slug")
-      .sort({ createdAt: -1 });
-    if (!gallery) {
-      return res.status(404).json({ message: "Gallery not found." });
-    }
+      .populate("category", "name slug")
+      .populate("createdBy updatedBy", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return res.status(200).json({ message: "Gallery Fetched.", data: gallery });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
-  }
-};
-
-// Get All Gallery
-export const getAllActiveGallery = async (req, res) => {
-  try {
-    const gallery = await Gallery.find({ isActive: true })
-      .populate("Category", "name slug")
-      .populate("User", "name slug")
-      .sort({ createdAt: -1 });
-    if (!gallery) {
-      return res.status(404).json({ message: "Active Gallery not found." });
+    if (!gallery.length) {
+      return res.status(404).json({ message: "No gallery records found." });
     }
 
     return res
       .status(200)
-      .json({ message: "Active Gallery Fetched.", data: gallery });
+      .json({ message: "All galleries fetched successfully.", data: gallery });
   } catch (error) {
+    console.error("Error fetching gallery:", error);
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-// Create or Update Gallery
+// Get All Active Gallery  (Public)
+
+export const getAllActiveGallery = async (req, res) => {
+  try {
+    const gallery = await Gallery.find({ isActive: true })
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .lean();
+    if (!gallery) {
+      return res.status(404).json({ message: "No active gallery found." });
+    }
+
+    return res.status(200).json({
+      message: "Active galleries fetched successfully.",
+      data: gallery,
+    });
+  } catch (error) {
+    console.error("Error fetching active gallery:", error);
+
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Get Active Gallery By ID  (Public)
+
+export const getAllActiveGalleryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Gallery Id is required." });
+    }
+
+    const gallery = await Gallery.findById(id)
+      .populate("category", "name slug")
+      .lean();
+    if (!gallery) {
+      return res.status(404).json({ message: "No gallery by ID found." });
+    }
+
+    return res.status(200).json({
+      message: "Galleries fetched by ID successfully.",
+      data: gallery,
+    });
+  } catch (error) {
+    console.error("Error fetching gallery by ID:", error);
+
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Create or Update Gallery (Protected)
+
 export const modifyGallery = async (req, res) => {
   try {
     const { id, title, category, isActive } = req.body;
 
-    if (!title) {
-      return res.status(400).json({ message: "Gallery Title is required." });
+    if (!title?.trim()) {
+      return res.status(400).json({ message: "Gallery title is required." });
     }
 
-    let gallery;
     let galleryMediaUrl = null;
 
+    // Upload new media if provided
     if (req.files?.galleryMedia?.[0]?.path) {
       const uploadGalleryMedia = await uploadToCloudinary(
         req.files.galleryMedia[0].path,
@@ -66,15 +107,19 @@ export const modifyGallery = async (req, res) => {
 
     // If `ID` exists -> Update Gallery Record
     if (id) {
-      gallery = await Gallery.findById(id);
+      const gallery = await Gallery.findById(id);
       if (!gallery) {
         return res.status(404).json({ message: "Gallery Record not found" });
       }
 
       // If New Gallery Media uploaded, delete old one
       if (galleryMediaUrl && gallery.image) {
-        const oldPublicId = gallery.image.split("/").pop().split(".")[0];
-        await destroyFromCloudinary(`gallery/media/${oldPublicId}`);
+        try {
+          const oldPublicId = gallery.image.split("/").pop().split(".")[0];
+          await destroyFromCloudinary(`gallery/media/${oldPublicId}`);
+        } catch (e) {
+          console.warn("Failed to delete old image:", e.message);
+        }
       }
 
       // Update Fields
@@ -100,7 +145,7 @@ export const modifyGallery = async (req, res) => {
         });
       }
 
-      gallery = await Gallery.create({
+      const gallery = await Gallery.create({
         title,
         category,
         image: galleryMediaUrl,

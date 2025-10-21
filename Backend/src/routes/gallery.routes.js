@@ -1,6 +1,7 @@
 import Router from "express";
 import {
   getAllActiveGallery,
+  getAllActiveGalleryById,
   getAllGallery,
   modifyGallery,
 } from "../controllers/gallery.controller.js";
@@ -12,6 +13,7 @@ const router = Router();
 // Public Routes
 router.get("/", getAllGallery);
 router.get("/active", getAllActiveGallery);
+router.get("/:id", getAllActiveGalleryById);
 
 // Protected (Admin/Author) Routes
 router.post(

@@ -26,7 +26,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "id": "6714b234afc1d2f44bc1f910",
+  "id": "68f1fa3d26526af6f64d8512",
   "name": "Updated Category Name",
   "description": "Updated description"
 }
