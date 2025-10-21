@@ -1,9 +1,10 @@
 import Router from "express";
-import { getAllGallery } from "../controllers/gallery.controller.js";
+import { getAllActiveGallery, getAllGallery } from "../controllers/gallery.controller.js";
 
 const router = Router();
 
 // Public Routes
 router.get("/", getAllGallery);
+router.get("/active", getAllActiveGallery);
 
 export default router;

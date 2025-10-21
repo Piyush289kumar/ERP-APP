@@ -1,3 +1,7 @@
 ### Get All Gallery
 GET {{baseUrl}}/gallery
 Accept: application/json
+
+### Get All Active Gallery
+GET {{baseUrl}}/gallery/active
+Accept: application/json

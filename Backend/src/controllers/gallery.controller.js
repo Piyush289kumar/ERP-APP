@@ -18,3 +18,24 @@ export const getAllGallery = async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
+
+// Get All Gallery
+export const getAllActiveGallery = async (req, res) => {
+  try {
+    const gallery = await Gallery.find({ isActive: true })
+      .populate("Category", "name slug")
+      .populate("User", "name slug")
+      .sort({ createdAt: -1 });
+    if (!gallery) {
+      return res.status(404).json({ message: "Active Gallery not found." });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Active Gallery Fetched.", data: gallery });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
