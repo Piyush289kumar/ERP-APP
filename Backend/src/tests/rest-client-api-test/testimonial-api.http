@@ -1,0 +1,9 @@
+### Get All Testimonials - Protected
+GET {{baseUrl}}/testimonial/all
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### Get All Active Testimonials - Public
+GET {{baseUrl}}/testimonial
+Accept: application/json
