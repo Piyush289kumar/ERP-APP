@@ -75,7 +75,7 @@ export const getBlogBySlug = async (req, res) => {
       return res.status(404).json({ message: "Blog not found." });
     }
 
-    res.status(200).json({ message: "Blog fetched successfully.", data: blog });
+    return res.status(200).json({ message: "Blog fetched successfully.", data: blog });
   } catch (error) {
     return res
       .status(500)
