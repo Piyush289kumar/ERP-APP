@@ -154,3 +154,69 @@ export const destroyContactUsById = async (req, res) => {
     });
   }
 };
+
+
+// ===============================================
+// 📝 Admin Respond to Contact Us Message
+// ===============================================
+export const respondToContactUs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Contact Us message ID is required.",
+      });
+    }
+
+    if (!message || message.trim() === "") {
+      return res.status(400).json({
+        status: "error",
+        message: "Response message cannot be empty.",
+      });
+    }
+
+    const contactUs = await ContactUs.findById(id);
+
+    if (!contactUs) {
+      return res.status(404).json({
+        status: "error",
+        message: `Contact Us message not found with ID: ${id}`,
+      });
+    }
+
+    // Save single response
+    contactUs.response = {
+      message: message.trim(),
+      respondedBy: req.user._id,
+      respondedAt: new Date(),
+    };
+
+    // Optionally, push to replies array for history
+    contactUs.replies.push({
+      message: message.trim(),
+      respondedBy: req.user._id,
+    });
+
+    // Update status
+    contactUs.status = "answered";
+
+    await contactUs.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Response added successfully.",
+      data: contactUs,
+    });
+  } catch (error) {
+    console.error("❌ Error responding to Contact Us message:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+
+};
