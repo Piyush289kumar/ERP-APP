@@ -71,7 +71,44 @@ export const getAllContactUs = async (req, res) => {
       data: contactUs,
     });
   } catch (error) {
-    console.error("❌ Error while submiting contact us:", error);
+    console.error("❌ Error while get all contact us message:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// Get single contact us message by ID
+
+export const getContactUsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        status: "error",
+        message: "ID is required for Contact us message found.",
+        data: contactUs,
+      });
+    }
+
+    const contactUs = await ContactUs.findById(id).lean();
+    if (!contactUs) {
+      return res.status(404).json({
+        status: "error",
+        message: `Contact us message not found with id : ${id}`,
+        data: contactUs,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Contact us message feched by ID successflly.",
+      data: contactUs,
+    });
+  } catch (error) {
+    console.error("❌ Error while feching contact us by id :", error);
     return res.status(500).json({
       status: "error",
       message: "Internal Server Error",

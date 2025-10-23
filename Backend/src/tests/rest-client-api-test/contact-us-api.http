@@ -13,3 +13,9 @@ Content-Type: application/json
 GET {{baseUrl}}/contact/admin
 Authorization: Bearer {{token}}
 Accept: application/json
+
+
+### Get single contact us message by id - Protected
+GET {{baseUrl}}/contact/admin/68fa0a53cbe18ed52efbaffc
+Authorization: Bearer {{token}}
+Accept: application/json
