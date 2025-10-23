@@ -28,6 +28,7 @@ const contactUsSchema = new Schema(
     phone: {
       type: String,
       trim: true,
+      default: null,
       match: [/^[0-9]{10,15}$/, "Invalid phone number format"],
     },
 

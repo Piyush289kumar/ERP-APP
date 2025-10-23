@@ -1,0 +1,11 @@
+### Submit Contact Us Form
+POST {{baseUrl}}/contact/submit
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "name" : "Piyush Kumar Raikwar",
+    "email" : "piyushraikwar289@gmail.com",
+    "phone" : "8817762774",
+    "message" : "Hello"
+}
