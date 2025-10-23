@@ -25,3 +25,8 @@ Content-Type: application/json
   "description": "Privacy Policy Description",
   "isActive": true
 }
+
+### Destroy Policy By Id - Protected (Delete)
+DELETE  {{baseUrl}}/policy/admin/destroy/68f9d93933ce5ff1d396e6fe
+Authorization: Bearer {{token}}
+Content-Type: application/json

@@ -1,5 +1,6 @@
 import Router from "express";
 import {
+  destroyPolicyById,
   getActivePoliciesBySlug,
   getAllActivePolicies,
   getAllPolicies,
@@ -15,5 +16,6 @@ router.get("/view/:slug", getActivePoliciesBySlug);
 // Protected Routes
 router.get("/admin", ensureAuth, getAllPolicies);
 router.post("/admin/save", ensureAuth, modifyPolicy);
+router.delete("/admin/destroy/:id", ensureAuth, destroyPolicyById);
 
 export default router;

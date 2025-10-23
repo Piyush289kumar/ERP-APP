@@ -120,7 +120,7 @@ export const modifyPolicy = async (req, res) => {
           .status(400)
           .json({ message: "Another policy with this slug already exists." });
       }
-      
+
       // Update Fileds
       policy.title = title || policy.title;
       policy.slug = generatedSlug || policy.slug;
@@ -159,6 +159,43 @@ export const modifyPolicy = async (req, res) => {
   } catch (error) {
     console.error("❌ Error while modifying policy:", error);
     return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// ===============================================
+// 🔥 Destroy Policy by ID (Protected)
+// ===============================================
+
+export const destroyPolicyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🧩 Validate input
+    if (!id?.trim()) {
+      return res.status(400).json({ message: "Policy ID is required." });
+    }
+
+    // 🕵️ Check if policy exists
+    const policy = await Policy.findById(id);
+    if (!policy) {
+      return res.status(404).json({ message: "Policy not found." });
+    }
+
+    // 🗑️ Delete policy
+    await Policy.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      status: "success",
+      message: `Policy "${policy.title}" deleted successfully.`,
+      data: { id },
+    });
+  } catch (error) {
+    console.error("❌ Error while deleting policy:", error);
+    return res.status(500).json({
+      status: "error",
       message: "Internal Server Error",
       error: error.message,
     });
