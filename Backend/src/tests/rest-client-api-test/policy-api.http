@@ -1,8 +1,27 @@
+### Get All Active Policies - Public
+GET {{baseUrl}}/policy
+Accept: application/json
+
+
+### Get Active Policy by Slug - Public
+GET {{baseUrl}}/policy/view/privacy-policy
+Accept: application/json
+
+
 ### Get All Policies - Protected
 GET {{baseUrl}}/policy/admin
 Authorization: Bearer {{token}}
 Accept: application/json
 
-### Get All Active Policies - Public
-GET {{baseUrl}}/policy
-Accept: application/json
+
+### Modify Policy - Protected (Create or Update)
+POST {{baseUrl}}/policy/admin/save
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Privacy Policy",
+  "slug": "privacy-policy",
+  "description": "Privacy Policy Description",
+  "isActive": true
+}
