@@ -25,6 +25,7 @@ import blogRoutes from "./routes/blog.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
 import galleryRoutes from "./routes/gallery.routes.js";
 import testimonialRoutes from "./routes/testimonials.routes.js";
+import policyRoutes from "./routes/policy.routes.js";
 
 // ===============================================
 // 🧠 Environment Config
@@ -68,7 +69,10 @@ app.use(limiter);
 // ===============================================
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "SuperSecretKey_123",
+    secret:
+      process.env.SESSION_SECRET ||
+      process.env.JWT_SECRET ||
+      "SuperSecretKey_123",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -98,6 +102,7 @@ app.use(`${routePrefix}/blog`, blogRoutes);
 app.use(`${routePrefix}/comments`, commentRoutes);
 app.use(`${routePrefix}/gallery`, galleryRoutes);
 app.use(`${routePrefix}/testimonial`, testimonialRoutes);
+app.use(`${routePrefix}/policy`, policyRoutes);
 
 // ===============================================
 // 🩵 Health Check

@@ -1,0 +1,8 @@
+### Get All Policies - Protected
+GET {{baseUrl}}/policy/admin
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get All Active Policies - Public
+GET {{baseUrl}}/policy
+Accept: application/json

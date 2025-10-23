@@ -31,7 +31,7 @@ const policySchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true, versionKey: true }
+  { timestamps: true }
 );
 
 // Auto-Generate Slug (Pre Save)
