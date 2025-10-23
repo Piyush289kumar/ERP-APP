@@ -1,6 +1,5 @@
-### Submit Contact Us Form
+### Submit Contact Us Form - Public
 POST {{baseUrl}}/contact/submit
-Authorization: {{token}}
 Content-Type: application/json
 
 {
@@ -9,3 +8,8 @@ Content-Type: application/json
     "phone" : "8817762774",
     "message" : "Hello"
 }
+
+### Get all contact us message - Protected
+GET {{baseUrl}}/contact/admin
+Authorization: Bearer {{token}}
+Accept: application/json

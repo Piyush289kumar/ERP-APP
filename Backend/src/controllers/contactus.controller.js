@@ -1,6 +1,6 @@
 import ContactUs from "../models/contactus.model.js";
 
-// Submit Contact Form
+// Submit Contact Form - Public
 export const createContactUs = async (req, res) => {
   try {
     const {
@@ -40,6 +40,34 @@ export const createContactUs = async (req, res) => {
     return res.status(201).json({
       status: "success",
       message: "Contact message submitted successfully.",
+      data: contactUs,
+    });
+  } catch (error) {
+    console.error("❌ Error while submiting contact us:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// Get All Contact us messages - Protected
+
+export const getAllContactUs = async (req, res) => {
+  try {
+    const contactUs = await ContactUs.find().sort({ createdAt: -1 }).lean();
+    if (!contactUs) {
+      return res.status(404).json({
+        status: "error",
+        message: "Contact us message not found.",
+        data: contactUs,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Contact us message feched successflly.",
       data: contactUs,
     });
   } catch (error) {

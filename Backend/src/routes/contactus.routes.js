@@ -1,6 +1,6 @@
 import Router from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { createContactUs } from "../controllers/contactus.controller.js";
+import { createContactUs, getAllContactUs } from "../controllers/contactus.controller.js";
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.post("/submit", createContactUs);
 // Protected Routes
 
 // Get all contact us message
-// router.get("/admin", ensureAuth, getAllContactUs);
+router.get("/admin", ensureAuth, getAllContactUs);
 
 // Get single contact us message by ID
 // router.get("/admin/:id", ensureAuth, getContactUsById);
