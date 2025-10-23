@@ -26,6 +26,7 @@ import commentRoutes from "./routes/comment.routes.js";
 import galleryRoutes from "./routes/gallery.routes.js";
 import testimonialRoutes from "./routes/testimonials.routes.js";
 import policyRoutes from "./routes/policy.routes.js";
+import contatUsRoutes from "./routes/contactus.routes.js";
 
 // ===============================================
 // 🧠 Environment Config
@@ -103,6 +104,9 @@ app.use(`${routePrefix}/comments`, commentRoutes);
 app.use(`${routePrefix}/gallery`, galleryRoutes);
 app.use(`${routePrefix}/testimonial`, testimonialRoutes);
 app.use(`${routePrefix}/policy`, policyRoutes);
+app.use(`${routePrefix}/contact`, contatUsRoutes);
+
+
 
 // ===============================================
 // 🩵 Health Check
