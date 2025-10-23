@@ -116,3 +116,41 @@ export const getContactUsById = async (req, res) => {
     });
   }
 };
+
+// ===============================================
+// 🗑 Delete Contact Us Message by ID - Admin
+// ===============================================
+export const destroyContactUsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Contact Us message ID is required.",
+      });
+    }
+
+    const contactUs = await ContactUs.findByIdAndDelete(id);
+
+    if (!contactUs) {
+      return res.status(404).json({
+        status: "error",
+        message: `Contact Us message not found with ID: ${id}`,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Contact Us message deleted successfully.",
+      data: contactUs,
+    });
+  } catch (error) {
+    console.error("❌ Error while deleting Contact Us message:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};

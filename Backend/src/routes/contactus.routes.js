@@ -1,6 +1,6 @@
 import Router from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { createContactUs, getAllContactUs, getContactUsById } from "../controllers/contactus.controller.js";
+import { createContactUs, destroyContactUsById, getAllContactUs, getContactUsById } from "../controllers/contactus.controller.js";
 
 const router = Router();
 
@@ -21,6 +21,6 @@ router.get("/admin/:id", ensureAuth, getContactUsById);
 // router.post("/admin/respond/:id", ensureAuth, respondToContactUs);
 
 // Delete a contact us message
-// router.delete("/admin/destroy/:id", ensureAuth, destroyContactUsById);
+router.delete("/admin/destroy/:id", ensureAuth, destroyContactUsById);
 
 export default router;

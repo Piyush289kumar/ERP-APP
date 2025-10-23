@@ -19,3 +19,11 @@ Accept: application/json
 GET {{baseUrl}}/contact/admin/68fa0a53cbe18ed52efbaffc
 Authorization: Bearer {{token}}
 Accept: application/json
+
+
+
+### Delete single contact us message by id - Protected
+DELETE  {{baseUrl}}/contact/admin/destroy/68fa0a53cbe18ed52efbaffc
+Authorization: Bearer {{token}}
+Accept: application/json
+
