@@ -10,6 +10,7 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // for redirect
 
 export function SignupForm({
   className,
@@ -27,6 +28,8 @@ export function SignupForm({
     type: "error" | "success";
     text: string;
   } | null>(null);
+
+  const navigate = useNavigate();
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +82,11 @@ export function SignupForm({
 
       setMessage({ type: "success", text: "Account created successfully." });
       setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+
+      // Redirect to login after 2 second
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
     } finally {
