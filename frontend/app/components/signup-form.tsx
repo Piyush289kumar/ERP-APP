@@ -1,55 +1,164 @@
-import { cn } from "~/lib/utils"
-import { Button } from "~/components/ui/button"
-import { Card, CardContent } from "~/components/ui/card"
+import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "~/components/ui/field"
-import { Input } from "~/components/ui/input"
+} from "~/components/ui/field";
+import { Input } from "~/components/ui/input";
+import React, { useState } from "react";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  // Handle form submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    const { name, email, password, confirmPassword } = formData;
+
+    if (!name || !email || !password || !confirmPassword) {
+      return setMessage({ type: "error", text: "All fields are required." });
+    }
+
+    if (password !== confirmPassword) {
+      return setMessage({ type: "error", text: "Passwords do not match." });
+    }
+
+    if (password.length < 8) {
+      return setMessage({
+        type: "error",
+        text: "Password must be at least 8 characters.",
+      });
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        }
+      );
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server did not return JSON");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to register. Try again.");
+      }
+
+      setMessage({ type: "success", text: "Account created successfully." });
+      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8">
+          <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold">Create your account</h1>
                 <p className="text-muted-foreground text-sm text-balance">
-                  Enter your email below to create your account
+                  Enter your details below to create your account
                 </p>
               </div>
+
+              {message && (
+                <div
+                  className={`text-sm p-2 rounded ${
+                    message.type === "error"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {message.text}
+                </div>
+              )}
+
+              <Field>
+                <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Piyush Kumar Raikwar"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+                {/* <FieldDescription>Input Description</FieldDescription> */}
+              </Field>
+
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="piyushraiwkar289@gmail.com"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                 />
-                <FieldDescription>
-                  We&apos;ll use this to contact you. We will not share your
-                  email with anyone else.
-                </FieldDescription>
+                {/* <FieldDescription>Input Description</FieldDescription> */}
               </Field>
+
               <Field>
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" type="password" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                    />
                   </Field>
+
                   <Field>
-                    <FieldLabel htmlFor="confirm-password">
-                      Confirm Password
-                    </FieldLabel>
-                    <Input id="confirm-password" type="password" required />
+                    <FieldLabel htmlFor="confirmPassword">Confirm</FieldLabel>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                    />
                   </Field>
                 </Field>
                 <FieldDescription>
@@ -57,7 +166,9 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit">Create Account</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Creating..." : "Create Account"}
+                </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
@@ -98,7 +209,7 @@ export function SignupForm({
           </form>
           <div className="bg-muted relative hidden md:block">
             <img
-              src="/placeholder.svg"
+              src="https://ui.shadcn.com/placeholder.svg"
               alt="Image"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
@@ -110,5 +221,5 @@ export function SignupForm({
         and <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
-  )
+  );
 }
