@@ -4,8 +4,8 @@ GET {{baseUrl}}/service
 Accept: application/json
 
 ### Get Service By ID - Public
-# GET {{baseUrl}}/service/view/68f90a248d600ff6b2d0aa14
-# Accept: application/json
+GET {{baseUrl}}/service/view/68fb66d0fe5e7c3eb4fc9626
+Accept: application/json
 
 ### Get All Service - Protected
 GET {{baseUrl}}/service/admin/all
@@ -14,6 +14,6 @@ Accept: application/json
 
 
 ### Delete Service By ID - Protected
-# DELETE  {{baseUrl}}/service/admin/68f90a248d600ff6b2d0aa14
-# Authorization: Bearer {{token}}
-# Accept: application/json
+DELETE  {{baseUrl}}/service/admin/68fb66d0fe5e7c3eb4fc9626
+Authorization: Bearer {{token}}
+Accept: application/json

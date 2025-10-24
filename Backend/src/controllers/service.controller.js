@@ -92,7 +92,7 @@ export const getAllActiveServices = async (req, res) => {
   }
 };
 
-export const getTestimonialById = async (req, res) => {
+export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -101,16 +101,16 @@ export const getTestimonialById = async (req, res) => {
       });
     }
 
-    const testimonial = await Testimonial.findById(id);
-    if (!testimonial) {
+    const service = await Service.findById(id);
+    if (!service) {
       return res.status(404).json({
-        message: `Testimonial not found with ${id}`,
+        message: `Service not found with ${id}`,
       });
     }
 
     return res.status(200).json({
-      message: "Testimonial fetch successfully.",
-      data: testimonial,
+      message: "Service fetch successfully.",
+      data: service,
     });
   } catch (error) {
     console.error("Internal Error:", error.message);
