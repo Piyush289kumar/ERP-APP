@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         {/* 🌗 Wrap with ThemeProvider */}
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          {/* <div className="p-4 flex justify-end"><ModeToggle /></div> */}
+          <div className="p-4 flex justify-end"><ModeToggle /></div>
           {children}
           <ScrollRestoration />
           <Scripts />

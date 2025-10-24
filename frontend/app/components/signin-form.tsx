@@ -12,15 +12,10 @@ import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // for redirect
 
-export function SignupForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -36,56 +31,47 @@ export function SignupForm({
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  // Handle form submit
+  // Handle Form Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
-    const { name, email, password, confirmPassword } = formData;
+    const { email, password } = formData;
 
-    if (!name || !email || !password || !confirmPassword) {
-      return setMessage({ type: "error", text: "All fields are required." });
-    }
-
-    if (password !== confirmPassword) {
-      return setMessage({ type: "error", text: "Passwords do not match." });
-    }
-
-    if (password.length < 8) {
+    if (!email || !password) {
       return setMessage({
         type: "error",
-        text: "Password must be at least 8 characters.",
+        text: "Email and Password are required.",
       });
     }
 
     setLoading(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/auth/register`,
+        `${import.meta.env.VITE_API_URL}/api/v1/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
+          body: JSON.stringify({ email, password }),
         }
       );
 
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error("Server did not return JSON");
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to register. Try again.");
+        throw new Error(data.message || "Failed to Sign In. Try again.");
       }
 
-      setMessage({ type: "success", text: "Account created successfully." });
-      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+      // store token & user
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Redirect to login after 2 second
+      setMessage({ type: "success", text: "Sign-in successfully." });
+      setFormData({ email: "", password: "" });
+
+      // redirect after 2 sec
       setTimeout(() => {
-        navigate("/sign-in");
+        navigate("/admin/dashboard");
       }, 2000);
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
@@ -101,9 +87,9 @@ export function SignupForm({
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Create your account</h1>
+                <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-muted-foreground text-sm text-balance">
-                  Enter your details below to create your account
+                  Login to your {import.meta.env.VITE_APP_NAME || "APP"} account
                 </p>
               </div>
 
@@ -120,19 +106,6 @@ export function SignupForm({
               )}
 
               <Field>
-                <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Piyush Kumar Raikwar"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-                {/* <FieldDescription>Input Description</FieldDescription> */}
-              </Field>
-
-              <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
@@ -146,36 +119,22 @@ export function SignupForm({
               </Field>
 
               <Field>
-                <Field className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="confirmPassword">Confirm</FieldLabel>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Field>
-                </Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
                 <FieldDescription>
                   Must be at least 8 characters long.
                 </FieldDescription>
               </Field>
+
               <Field>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Creating..." : "Create Account"}
+                  {loading ? "Sign in..." : "Sign In"}
                 </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
@@ -211,7 +170,7 @@ export function SignupForm({
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Already have an account? <Link to="/sign-in">Sign In</Link>
+                Don't have an account? <Link to="/sign-up">Sign Up</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
