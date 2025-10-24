@@ -10,6 +10,11 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 
+// 👇 import your ThemeProvider
+import { ThemeProvider } from "~/components/theme-provider";
+import { ModeToggle } from "./components/mode-toggle";
+// import { ModeToggle } from "~/components/mode-toggle";
+
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
@@ -33,9 +38,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
+        {/* 🌗 Wrap with ThemeProvider */}
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          {/* <div className="p-4 flex justify-end"><ModeToggle /></div> */}
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+        </ThemeProvider>
       </body>
     </html>
   );
