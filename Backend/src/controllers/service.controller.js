@@ -67,22 +67,22 @@ export const getAllServices = async (req, res) => {
   }
 };
 
-// Get All Active Testimonials - Public
-export const getAllActiveTestimonials = async (req, res) => {
+// Get All Active Service - Public
+export const getAllActiveServices = async (req, res) => {
   try {
     // Uses static method defined in model (for performance & reuse)
-    const testimonials = await Testimonial.fetchActive(12);
+    const services = await Service.fetchActive(12);
 
-    if (!testimonials.length) {
+    if (!services.length) {
       return res
         .status(404)
-        .json({ message: "No active testimonials found.", data: [] });
+        .json({ message: "No active services found.", data: [] });
     }
 
     return res.status(200).json({
-      message: "Active testimonials fetched successfully.",
-      data: testimonials,
-      count: testimonials.length,
+      message: "Active services fetched successfully.",
+      data: services,
+      count: services.length,
     });
   } catch (error) {
     console.error("Internal Error:", error.message);

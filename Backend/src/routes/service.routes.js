@@ -1,6 +1,6 @@
 import Router from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { getAllServices } from "../controllers/service.controller.js";
+import { getAllActiveServices, getAllServices } from "../controllers/service.controller.js";
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const router = Router();
    ================================ */
 
 // ✅ Get all active services (public site)
-// router.get("/", getAllActiveServices);
+router.get("/", getAllActiveServices);
 
 // ✅ Get testimonial by ID (public)
 // router.get("/view/:id", getServiceById);
