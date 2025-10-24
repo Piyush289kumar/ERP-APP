@@ -121,90 +121,88 @@ export const getServiceById = async (req, res) => {
 };
 
 /**
- * ✅ Create or Update Testimonial (Protected)
+ * ✅ Create or Update Service (Protected)
  */
-export const modifyTestimonial = async (req, res) => {
+export const modifyService = async (req, res) => {
   try {
-    const { id, name, designation, description, rating, isActive } = req.body;
+    const { id, title, subHeading, description, isActive } = req.body;
 
     // Basic Validation
-    if (!name?.trim() || !description?.trim() || !rating) {
+    if (!title?.trim() || !description?.trim() || !subHeading?.trim()) {
       return res.status(400).json({
-        message: "Name, Description & Rating are required.",
+        message: "Title, subHeading & Description are required.",
       });
     }
 
-    let avatarUrl = null;
+    let thumbnailUrl = null;
 
-    // Upload Avatar if Provided
-    if (req.files?.avatar?.[0]?.path) {
-      const uploadAvatar = await uploadToCloudinary(
-        req.files.avatar[0].path,
-        "testimonial/avatar"
+    // Upload Thumbnail if Provided
+    if (req.files?.thumbnail?.[0]?.path) {
+      const uploadThumbnail = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "service/thumbnail"
       );
-      avatarUrl = uploadAvatar.secure_url;
+      thumbnailUrl = uploadThumbnail.secure_url;
     }
 
-    // --- 🧩 UPDATE Existing Testimonial ---
+    // --- 🧩 UPDATE Existing Service ---
     if (id) {
-      const testimonial = await Testimonial.findById(id);
-      if (!testimonial) {
+      const service = await Service.findById(id);
+      if (!service) {
         return res.status(404).json({
-          message: `Testimonial not found with ID: ${id}`,
+          message: `Service not found with ID: ${id}`,
         });
       }
 
-      // If new avatar uploaded → delete old one
-      if (avatarUrl && testimonial.avatar) {
+      // If new thumbnail uploaded → delete old one
+      if (thumbnailUrl && service.thumbnail) {
         try {
-          const oldPublicId = testimonial.avatar.split("/").pop().split(".")[0];
-          await destroyFromCloudinary(`testimonial/avatar/${oldPublicId}`);
+          const oldPublicId = service.thumbnail.split("/").pop().split(".")[0];
+          await destroyFromCloudinary(`service/thumbnail/${oldPublicId}`);
         } catch (e) {
           console.warn("⚠️ Failed to delete old image:", e.message);
         }
       }
 
       // Update only changed fields
-      testimonial.name = name || testimonial.name;
-      testimonial.designation = designation || testimonial.designation;
-      testimonial.description = description || testimonial.description;
-      testimonial.avatar = avatarUrl || testimonial.avatar;
-      testimonial.rating = rating || testimonial.rating;
-      testimonial.isActive = isActive ?? testimonial.isActive;
-      testimonial.updatedBy = req.user?._id;
+      service.title = title || service.title;
+      service.subHeading = subHeading || service.subHeading;
+      service.description = description || service.description;
+      service.thumbnail = thumbnailUrl || service.thumbnail;
+      service.isActive = isActive ?? service.isActive;
+      service.updatedBy = req.user?._id;
 
-      await testimonial.save();
+      await service.save();
 
       return res.status(200).json({
-        message: "✅ Testimonial updated successfully.",
-        data: testimonial,
+        message: "✅ Service updated successfully.",
+        data: service,
       });
     }
 
-    // --- 🆕 CREATE New Testimonial ---
-    const existing = await Testimonial.findOne({ name });
+    // --- 🆕 CREATE New Service ---
+    const existing = await Service.findOne({ title });
     if (existing) {
       return res.status(400).json({
-        message: "❌ Testimonial with this name already exists.",
+        message: "❌ Service with this title already exists.",
       });
     }
 
-    const testimonial = await Testimonial.create({
-      name,
-      designation,
+    const service = await Service.create({
+      title,
+      subHeading,
       description,
-      avatar: avatarUrl,
-      rating,
+      thumbnail: thumbnailUrl,
       isActive,
       createdBy: req.user?._id,
     });
 
     return res.status(201).json({
-      message: "✅ Testimonial created successfully.",
-      data: testimonial,
+      message: "✅ Service created successfully.",
+      data: service,
     });
   } catch (error) {
-    console.error("❌ Error in modifyTestimonial:", error);
+    console.error("❌ Error in modifyService:", error);
     return res.status(500).json({
       message: "Internal Server Error",
       error: error.message,
@@ -212,8 +210,8 @@ export const modifyTestimonial = async (req, res) => {
   }
 };
 
-// Destroy Testimonial by ID
-export const destroyTestimonialById = async (req, res) => {
+// Destroy Service by ID
+export const destroyServiceById = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -221,24 +219,22 @@ export const destroyTestimonialById = async (req, res) => {
       return res.status(400).json({ message: "ID is required." });
     }
 
-    // Find testimonial by ID
-    const testimonial = await Testimonial.findById(id);
-    if (!testimonial) {
-      return res.status(404).json({ message: "Testimonial not found." });
+    // Find Service by ID
+    const service = await Service.findById(id);
+    if (!service) {
+      return res.status(404).json({ message: "Service not found." });
     }
 
-    // Delete from Cloudinary if avatar exists
-    if (testimonial.avatar) {
-      const publicId = testimonial.avatar.split("/").pop().split(".")[0];
-      await destroyFromCloudinary(`testimonial/avatar/${publicId}`);
+    // Delete from Cloudinary if thumbnail exists
+    if (service.thumbnail) {
+      const publicId = service.thumbnail.split("/").pop().split(".")[0];
+      await destroyFromCloudinary(`service/thumbnail/${publicId}`);
     }
 
     // Delete from DB
-    await Testimonial.findByIdAndDelete(id);
+    await Service.findByIdAndDelete(id);
 
-    return res
-      .status(200)
-      .json({ message: "Testimonial deleted successfully." });
+    return res.status(200).json({ message: "Service deleted successfully." });
   } catch (error) {
     console.error("Internal Error:", error.message);
     return res
