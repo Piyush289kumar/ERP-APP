@@ -1,0 +1,19 @@
+
+### Get All Active Service - Public
+# GET {{baseUrl}}/testimonial
+# Accept: application/json
+
+### Get Service By ID - Public
+# GET {{baseUrl}}/testimonial/view/68f90a248d600ff6b2d0aa14
+# Accept: application/json
+
+### Get All Service - Protected
+GET {{baseUrl}}/service/admin/all
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### Delete Service By ID - Protected
+# DELETE  {{baseUrl}}/testimonial/admin/68f90a248d600ff6b2d0aa14
+# Authorization: Bearer {{token}}
+# Accept: application/json

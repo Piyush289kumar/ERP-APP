@@ -25,6 +25,7 @@ import blogRoutes from "./routes/blog.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
 import galleryRoutes from "./routes/gallery.routes.js";
 import testimonialRoutes from "./routes/testimonials.routes.js";
+import serviceRoutes from "./routes/service.routes.js";
 import policyRoutes from "./routes/policy.routes.js";
 import contatUsRoutes from "./routes/contactus.routes.js";
 
@@ -103,10 +104,9 @@ app.use(`${routePrefix}/blog`, blogRoutes);
 app.use(`${routePrefix}/comments`, commentRoutes);
 app.use(`${routePrefix}/gallery`, galleryRoutes);
 app.use(`${routePrefix}/testimonial`, testimonialRoutes);
+app.use(`${routePrefix}/service`, serviceRoutes);
 app.use(`${routePrefix}/policy`, policyRoutes);
 app.use(`${routePrefix}/contact`, contatUsRoutes);
-
-
 
 // ===============================================
 // 🩵 Health Check
