@@ -170,13 +170,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (!token) return;
 
         const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/v1/auth/profile`,
+          `${import.meta.env.VITE_API_URL}/api/v1/users/profile/view`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        setUser({ ...res.data.user, avatar: "/avatars/default.jpg" }); // set default avatar if needed
+        setUser({ ...res.data.user }); // set default avatar if needed
       } catch (err) {
         console.error("Profile fetch error:", err);
         // Optional: redirect to login if unauthorized
