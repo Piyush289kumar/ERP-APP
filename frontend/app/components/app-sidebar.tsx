@@ -198,7 +198,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Command className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Acme Inc</span>
+                  <span className="truncate font-medium">
+                    {import.meta.env.VITE_APP_NAME || "React App"}
+                  </span>
                   <span className="truncate text-xs">Enterprise</span>
                 </div>
               </a>
