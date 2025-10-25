@@ -91,3 +91,19 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: "Error feching profile." });
   }
 };
+
+// -------------------------
+// Logout user (JWT) - optimized
+// -------------------------
+export const logout = async (req, res) => {
+  try {
+    // If you want, implement token blacklist in DB/Redis for server-side invalidation
+    return res.status(200).json({
+      message:
+        "Logout successful. Please remove the token from client storage.",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+};
