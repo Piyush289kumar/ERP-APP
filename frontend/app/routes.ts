@@ -9,4 +9,5 @@ export default [
 
     // Protected routes
     route("admin/dashboard", "routes/protected/dashboard-wrapper.tsx"),
+    route("admin/users/profile", "routes/protected/user-wrapper.tsx"),
 ] satisfies RouteConfig;
