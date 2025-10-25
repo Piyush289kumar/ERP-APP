@@ -33,12 +33,12 @@ export function NavUser({
   user: {
     name: string;
     email: string;
-    avatar: string;
+    avatar?: string;
   };
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
-
+  
   const handleLogout = async () => {
     try {
       const token = getToken();

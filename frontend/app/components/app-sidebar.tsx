@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   BookOpen,
   Bot,
@@ -12,12 +12,12 @@ import {
   Send,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "~/components/nav-main"
-import { NavProjects } from "~/components/nav-projects"
-import { NavSecondary } from "~/components/nav-secondary"
-import { NavUser } from "~/components/nav-user"
+import { NavMain } from "~/components/nav-main";
+import { NavProjects } from "~/components/nav-projects";
+import { NavSecondary } from "~/components/nav-secondary";
+import { NavUser } from "~/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +26,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "~/components/ui/sidebar"
+} from "~/components/ui/sidebar";
+import { useNavigate } from "react-router";
+import { getToken } from "~/utils/auth";
+import axios from "axios";
 
 const data = {
   user: {
@@ -150,9 +153,40 @@ const data = {
       icon: Map,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
+  const [user, setUser] = React.useState<{
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/v1/auth/profile`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setUser({ ...res.data.user, avatar: "/avatars/default.jpg" }); // set default avatar if needed
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+        // Optional: redirect to login if unauthorized
+        navigate("/sign-in");
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -177,9 +211,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter>
+      </SidebarFooter> */}
+
+      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
     </Sidebar>
-  )
+  );
 }

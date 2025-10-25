@@ -69,9 +69,6 @@ export function SignInForm({
       // Securely store token using helper
       saveToken(data.token);
 
-      // store token & user
-      localStorage.setItem("user", JSON.stringify(data.user));
-
       setMessage({ type: "success", text: "Sign-in successfully." });
       setFormData({ email: "", password: "" });
 

@@ -85,7 +85,7 @@ export const login = async (req, res) => {
 // Get Logged-in User's to these Profile
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password").lean();
     res.status(200).json({ message: "Profile fetch successfully", user });
   } catch (error) {
     res.status(500).json({ message: "Error feching profile." });
