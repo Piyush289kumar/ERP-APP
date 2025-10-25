@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -12,7 +13,6 @@ import "./app.css";
 
 // 👇 import your ThemeProvider
 import { ThemeProvider } from "~/components/theme-provider";
-import { ModeToggle } from "~/components/mode-toggle";
 import { SidebarProvider } from "~/components/ui/sidebar";
 // import { ModeToggle } from "~/components/mode-toggle";
 
@@ -42,12 +42,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* 🌗 Wrap with ThemeProvider */}
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           {/* ✅ Wrap sidebar provider here */}
-          <SidebarProvider>
-            {/* <div className="p-4 flex justify-end">
+          {/* <div className="p-4 flex justify-end">
               <ModeToggle />
-            </div> */}
-            {children}
-          </SidebarProvider>
+              </div> */}
+
+          <SidebarProvider>{children}</SidebarProvider>
 
           <ScrollRestoration />
           <Scripts />

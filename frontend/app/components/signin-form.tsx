@@ -11,8 +11,12 @@ import {
 import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // for redirect
+import { saveToken } from "~/utils/auth";
 
-export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
+export function SignInForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -62,8 +66,10 @@ export function SignIn({ className, ...props }: React.ComponentProps<"div">) {
         throw new Error(data.message || "Failed to Sign In. Try again.");
       }
 
+      // Securely store token using helper
+      saveToken(data.token);
+
       // store token & user
-      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       setMessage({ type: "success", text: "Sign-in successfully." });
