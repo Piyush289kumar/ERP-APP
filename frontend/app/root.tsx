@@ -12,7 +12,8 @@ import "./app.css";
 
 // 👇 import your ThemeProvider
 import { ThemeProvider } from "~/components/theme-provider";
-import { ModeToggle } from "./components/mode-toggle";
+import { ModeToggle } from "~/components/mode-toggle";
+import { SidebarProvider } from "~/components/ui/sidebar";
 // import { ModeToggle } from "~/components/mode-toggle";
 
 export const links: Route.LinksFunction = () => [
@@ -40,8 +41,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         {/* 🌗 Wrap with ThemeProvider */}
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <div className="p-4 flex justify-end"><ModeToggle /></div>
-          {children}
+          {/* ✅ Wrap sidebar provider here */}
+          <SidebarProvider>
+            {/* <div className="p-4 flex justify-end">
+              <ModeToggle />
+            </div> */}
+            {children}
+          </SidebarProvider>
+
           <ScrollRestoration />
           <Scripts />
         </ThemeProvider>
