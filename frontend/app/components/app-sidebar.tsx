@@ -30,6 +30,10 @@ import {
 import { useNavigate } from "react-router";
 import { getToken } from "~/utils/auth";
 import axios from "axios";
+import { useUserProfile } from "~/features/user/userApi";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "~/redux/store";
+import { setUser } from "~/features/user/userSlice";
 
 const data = {
   user: {
@@ -156,6 +160,24 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  // Fetch + Sync user profile (TanStack + Redux)
+  const dispatch = useDispatch();
+  const { isLoading } = useUserProfile();
+
+  // Access user directly from Redux store
+  const user = useSelector((state: RootState) => state.user);
+
+  const handleTestDispatch = () => {
+    const fakeUser = {
+      name: "Test User",
+      email: "test@example.com",
+      avatar: "/avatars/test.jpg",
+    };
+    console.log("🧪 Dispatching fake user:", fakeUser);
+    dispatch(setUser(fakeUser));
+  };
+
+  console.log("🧠 Redux user:", user);
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -184,7 +206,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {/* ✅ Show loading, then user */}
+        {isLoading ? (
+          <div className="p-2 text-xs text-muted-foreground">
+            Loading user...
+          </div>
+        ) : user?.name ? (
+          <NavUser
+            user={{
+              name: data.user.name,
+              email: data.user.email,
+              avatar: data.user.avatar,
+            }}
+          />
+        ) : (
+          <div className="p-2 text-xs text-muted-foreground">No user data</div>
+        )}
+
+        {/* 🧪 Temporary Test Button */}
+        <button
+          onClick={handleTestDispatch}
+          className="m-2 rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+        >
+          Test Dispatch
+        </button>
       </SidebarFooter>
 
       {/* <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter> */}

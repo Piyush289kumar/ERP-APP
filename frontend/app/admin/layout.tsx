@@ -14,6 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Fragment } from "react/jsx-runtime";
 
 export default function AdminLayout({
   children,
@@ -41,15 +42,16 @@ export default function AdminLayout({
                     Dashboard
                   </BreadcrumbLink>
                 </BreadcrumbItem>
+
                 {pathParts.slice(1).map((part, index) => (
-                  <>
-                    <BreadcrumbSeparator key={`sep-${index}`} />
-                    <BreadcrumbItem key={`item-${index}`}>
+                  <Fragment key={`crumb-${index}`}>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
                       <BreadcrumbPage className="capitalize">
                         {part.replace("-", " ")}
                       </BreadcrumbPage>
                     </BreadcrumbItem>
-                  </>
+                  </Fragment>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>

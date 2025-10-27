@@ -27,7 +27,7 @@ import {
 import { useAuth } from "~/hooks/useAuth";
 
 export function NavUser({
-  user,
+  user
 }: {
   user: {
     name: string;
