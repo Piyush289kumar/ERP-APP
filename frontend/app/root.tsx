@@ -14,6 +14,7 @@ import "./app.css";
 // 👇 import your ThemeProvider
 import { ThemeProvider } from "~/components/theme-provider";
 import { SidebarProvider } from "~/components/ui/sidebar";
+import { QueryProvider } from "./providers/QueryProvider";
 // import { ModeToggle } from "~/components/mode-toggle";
 
 export const links: Route.LinksFunction = () => [
@@ -39,18 +40,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {/* 🌗 Wrap with ThemeProvider */}
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          {/* ✅ Wrap sidebar provider here */}
-          {/* <div className="p-4 flex justify-end">
+        {/* Wrap everything inside tanStack + Theme + Sidebar */}
+        <QueryProvider>
+          {/* 🌗 Wrap with ThemeProvider */}
+          <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+            {/* ✅ Wrap sidebar provider here */}
+            {/* <div className="p-4 flex justify-end">
               <ModeToggle />
               </div> */}
 
-          <SidebarProvider>{children}</SidebarProvider>
+            <SidebarProvider>{children}</SidebarProvider>
 
-          <ScrollRestoration />
-          <Scripts />
-        </ThemeProvider>
+            <ScrollRestoration />
+            <Scripts />
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
