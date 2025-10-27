@@ -6,6 +6,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -24,10 +25,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
+import { clearUser } from "~/features/user/userSlice";
 import { useAuth } from "~/hooks/useAuth";
 
 export function NavUser({
-  user
+  user,
 }: {
   user: {
     name: string;
@@ -38,10 +40,13 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const { logout, isLoading } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     logout(undefined, {
       onSuccess: () => {
+        dispatch(clearUser());
+        
         navigate("/sign-in");
       },
       onError: (error: any) => {
