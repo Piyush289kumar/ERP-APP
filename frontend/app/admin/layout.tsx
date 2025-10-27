@@ -1,4 +1,6 @@
-import { useLocation } from "react-router-dom";
+// app/admin/layout.tsx
+
+import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -57,7 +59,9 @@ export default function AdminLayout({
             </Breadcrumb>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
+        <main className="flex flex-1 flex-col gap-4 p-4">
+          <Outlet />
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -7,8 +7,8 @@ export default [
     route("sign-up", "routes/public/sign-up-wrapper.tsx"),
     route("sign-in", "routes/public/sign-in-wrapper.tsx"),
 
-    // Protected routes under admin layout
-    route("admin", "routes/protected/admin-layout.tsx", [
+    // Admin routes with AdminLayout wrapper
+    route("admin", "admin/layout.tsx", [
         route("dashboard", "routes/protected/dashboard-wrapper.tsx"),
         route("users/profile", "routes/protected/user-wrapper.tsx"),
     ]),
