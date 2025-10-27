@@ -161,23 +161,9 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Fetch + Sync user profile (TanStack + Redux)
-  const dispatch = useDispatch();
   const { isLoading } = useUserProfile();
-
   // Access user directly from Redux store
   const user = useSelector((state: RootState) => state.user);
-
-  const handleTestDispatch = () => {
-    const fakeUser = {
-      name: "Test User",
-      email: "test@example.com",
-      avatar: "/avatars/test.jpg",
-    };
-    console.log("🧪 Dispatching fake user:", fakeUser);
-    dispatch(setUser(fakeUser));
-  };
-
-  console.log("🧠 Redux user:", user);
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -214,25 +200,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ) : user?.name ? (
           <NavUser
             user={{
-              name: data.user.name,
-              email: data.user.email,
-              avatar: data.user.avatar,
+              name: user.name!,
+              email: user.email!,
+              avatar: user.avatar || "/avatars/default.jpg",
             }}
           />
         ) : (
           <div className="p-2 text-xs text-muted-foreground">No user data</div>
         )}
-
-        {/* 🧪 Temporary Test Button */}
-        <button
-          onClick={handleTestDispatch}
-          className="m-2 rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-        >
-          Test Dispatch
-        </button>
       </SidebarFooter>
-
-      {/* <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter> */}
     </Sidebar>
   );
 }
