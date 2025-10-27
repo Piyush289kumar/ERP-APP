@@ -12,11 +12,13 @@ import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // for redirect
 import { saveToken } from "~/utils/auth";
+import { useAuth } from "~/hooks/useAuth";
 
 export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -30,7 +32,7 @@ export function SignInForm({
 
   const navigate = useNavigate();
 
-  // Handle input change
+  // Handle Each input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
@@ -40,47 +42,28 @@ export function SignInForm({
     e.preventDefault();
     setMessage(null);
 
-    const { email, password } = formData;
-
-    if (!email || !password) {
+    if (!formData.email || !formData.password) {
       return setMessage({
         type: "error",
         text: "Email and Password are required.",
       });
     }
 
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+    login(formData, {
+      onSuccess: (data) => {
+        setMessage({ type: "success", text: "Signed in successfully." });
+        setFormData({ email: "", password: "" });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to Sign In. Try again.");
-      }
-
-      // Securely store token using helper
-      saveToken(data.token);
-
-      setMessage({ type: "success", text: "Sign-in successfully." });
-      setFormData({ email: "", password: "" });
-
-      // redirect after 2 sec
-      setTimeout(() => {
-        navigate("/admin/dashboard");
-      }, 2000);
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
-    } finally {
-      setLoading(false);
-    }
+        // Redirect after short delay
+        setTimeout(() => navigate("/admin/dashboard"), 1000);
+      },
+      onError: (error: any) => {
+        setMessage({
+          type: "error",
+          text: error?.message || "Login failed. Please try again.",
+        });
+      },
+    });
   };
 
   return (
@@ -136,8 +119,8 @@ export function SignInForm({
               </Field>
 
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Sign in..." : "Sign In"}
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">

@@ -156,36 +156,6 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const navigate = useNavigate();
-  const [user, setUser] = React.useState<{
-    name: string;
-    email: string;
-    avatar?: string;
-  } | null>(null);
-
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/profile/view`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        setUser({ ...res.data.user }); // set default avatar if needed
-      } catch (err) {
-        console.error("Profile fetch error:", err);
-        // Optional: redirect to login if unauthorized
-        navigate("/sign-in");
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -213,11 +183,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      {/* <SidebarFooter>
+      <SidebarFooter>
         <NavUser user={data.user} />
-      </SidebarFooter> */}
+      </SidebarFooter>
 
-      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
+      {/* <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter> */}
     </Sidebar>
   );
 }

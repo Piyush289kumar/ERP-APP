@@ -24,8 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { getToken, removeToken } from "~/utils/auth";
-import axios from "axios";
+import { useAuth } from "~/hooks/useAuth";
 
 export function NavUser({
   user,
@@ -37,32 +36,18 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  
+
   const handleLogout = async () => {
-    try {
-      const token = getToken();
-      if (!token) return;
-
-      // Call Backend logout endpoint
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/auth/logout`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Remove token from localStorage
-      removeToken();
-
-      // Redireact to sign-in page
-      navigate("/sign-in");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    logout(undefined, {
+      onSuccess: () => {
+        navigate("/sign-in");
+      },
+      onError: (error: any) => {
+        console.error("Logout failed.", error.message);
+      },
+    });
   };
 
   return (
@@ -128,7 +113,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log out
+              {isLoading ? "Logging out.." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

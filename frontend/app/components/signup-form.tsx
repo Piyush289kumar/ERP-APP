@@ -11,11 +11,13 @@ import {
 import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // for redirect
+import { useAuth } from "~/hooks/useAuth";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const { register, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -23,7 +25,6 @@ export function SignupForm({
     confirmPassword: "",
   });
 
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "error" | "success";
     text: string;
@@ -31,67 +32,54 @@ export function SignupForm({
 
   const navigate = useNavigate();
 
-  // Handle input change
+  // handle field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  // Handle form submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  // handle submit via TanStack mutation
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
     const { name, email, password, confirmPassword } = formData;
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword)
       return setMessage({ type: "error", text: "All fields are required." });
-    }
 
-    if (password !== confirmPassword) {
+    if (password !== confirmPassword)
       return setMessage({ type: "error", text: "Passwords do not match." });
-    }
 
-    if (password.length < 8) {
+    if (password.length < 8)
       return setMessage({
         type: "error",
-        text: "Password must be at least 8 characters.",
+        text: "Password must be at least 8 characters long.",
       });
-    }
 
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/auth/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        }
-      );
-
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error("Server did not return JSON");
+    register(
+      { name, email, password },
+      {
+        onSuccess: () => {
+          setMessage({
+            type: "success",
+            text: "Account created successfully! Redirecting...",
+          });
+          setFormData({
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+          });
+          setTimeout(() => navigate("/sign-in"), 1500);
+        },
+        onError: (error: any) => {
+          setMessage({
+            type: "error",
+            text: error?.message || "Registration failed. Please try again.",
+          });
+        },
       }
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to register. Try again.");
-      }
-
-      setMessage({ type: "success", text: "Account created successfully." });
-      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
-
-      // Redirect to login after 2 second
-      setTimeout(() => {
-        navigate("/sign-in");
-      }, 2000);
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   return (
@@ -174,8 +162,8 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Creating..." : "Create Account"}
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Creating..." : "Create Account"}
                 </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
