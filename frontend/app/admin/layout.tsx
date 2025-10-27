@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -19,12 +20,14 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const location = useLocation();
+  const pathParts = location.pathname.split("/").filter(Boolean);
+
   return (
     <SidebarProvider>
       <AppSidebar />
-
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background rounded-t-2xl">
           <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
@@ -38,15 +41,20 @@ export default function AdminLayout({
                     Dashboard
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Admin</BreadcrumbPage>
-                </BreadcrumbItem>
+                {pathParts.slice(1).map((part, index) => (
+                  <>
+                    <BreadcrumbSeparator key={`sep-${index}`} />
+                    <BreadcrumbItem key={`item-${index}`}>
+                      <BreadcrumbPage className="capitalize">
+                        {part.replace("-", " ")}
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </>
+                ))}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
-
         <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
       </SidebarInset>
     </SidebarProvider>
