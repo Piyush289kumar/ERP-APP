@@ -16,8 +16,14 @@ export default [
         route("dashboard", "routes/protected/dashboard-wrapper.tsx"),
 
 
-        // Category Route.
-        route("category", "routes/protected/category-wrapper.tsx"),
+        // Category Routes
+        layout("routes/protected/ProtectedLayout.tsx", [
+            route("category", "features/category/index.tsx"),
+            // ✅ Create Wrapper (unique file)
+            route("category/create", "features/category/create-wrapper.tsx"),
+            // ✅ Edit Wrapper (unique file)
+            route("category/edit/:id", "features/category/edit-wrapper.tsx"),
+        ]),
 
         // User Routes
         route("users/profile", "routes/protected/user-wrapper.tsx"),
