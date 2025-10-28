@@ -89,31 +89,42 @@ const createAdminAndUsers = async () => {
 };
 
 const createCategories = async () => {
-  const categories = [];
-  const adminUser = await User.findOne(); // use one user as createdBy
+  const adminUser = await User.findOne();
+  const total = 100000;
+  const batchSize = 5000; // insert in smaller chunks
+  let createdCount = 0;
 
-  // ⚙️ Generate 5000 unique category names
-  const total = 5000;
-  const nameSet = new Set();
+  console.log(
+    `🧱 Starting generation of ${total.toLocaleString()} categories...`
+  );
 
-  while (nameSet.size < total) {
-    nameSet.add(faker.commerce.department() + " " + faker.word.adjective());
+  while (createdCount < total) {
+    const nameSet = new Set();
+
+    // 🧩 Generate unique names for current batch
+    while (nameSet.size < batchSize) {
+      nameSet.add(faker.commerce.department() + " " + faker.word.adjective());
+    }
+
+    const categoryDocs = Array.from(nameSet).map((name) => ({
+      name,
+      slug: slugify(name, { lower: true, strict: true }),
+      description: faker.lorem.sentence(),
+      createdBy: adminUser?._id || null,
+    }));
+
+    // 💾 Insert batch
+    await Category.insertMany(categoryDocs, { ordered: false });
+    createdCount += batchSize;
+
+    console.log(
+      `✅ Inserted ${createdCount.toLocaleString()}/${total.toLocaleString()} categories...`
+    );
   }
 
-  console.log(`🧱 Generating ${nameSet.size} unique categories...`);
-
-  // 💾 Bulk insert for performance
-  const categoryDocs = Array.from(nameSet).map((name) => ({
-    name,
-    slug: slugify(name, { lower: true, strict: true }),
-    description: faker.lorem.sentence(),
-    createdBy: adminUser?._id || null,
-  }));
-
-  await Category.insertMany(categoryDocs, { ordered: false });
-
-  console.log(`✅ Successfully inserted ${categoryDocs.length} categories.`);
-  return categoryDocs;
+  console.log(
+    `🎉 Completed inserting all ${total.toLocaleString()} categories.`
+  );
 };
 
 export default createCategories;
