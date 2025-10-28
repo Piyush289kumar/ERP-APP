@@ -3,14 +3,31 @@ import Category from "../models/blogs/category.model.js";
 
 export const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find();
-    if (!categories) {
-      return res.status(404).json({ message: "Categories  not found." });
-    }
+    // Extract query params (with defaults)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    // Calculate how many to skip
+    const skip = (page - 1) * limit;
+
+    // Fetch total count for pagination
+    const total = await Category.countDocuments();
+
+    // Fetch paginated categories
+    const categories = await Category.find()
+      .sort({ createdAt: -1 }) // latest first
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).json({
-      message: "Categories Found.",
+      message: "Categories fetched successfully.",
       data: categories,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Internal Error", error: error.message });

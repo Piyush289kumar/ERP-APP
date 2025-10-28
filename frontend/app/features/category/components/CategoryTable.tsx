@@ -7,7 +7,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   type SortingState,
   type VisibilityState,
@@ -32,6 +31,7 @@ import {
   SquarePen,
   Trash,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,6 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
   Table,
   TableBody,
@@ -51,12 +52,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { useDispatch } from "react-redux";
 import { openModal } from "~/features/category/categorySlice";
 import { toast } from "sonner";
-import { useDeleteCategoryMutation } from "../categoryApi";
+import {
+  useDeleteCategoryMutation,
+  useGetCategoriesQuery,
+} from "../categoryApi";
+import { CategoryPagination } from "./CategoryPagination";
+// import { CategoryPagination } from "~/features/category/components/CategoryPagination";
 
-// 🧱 Types
 interface Category {
   name: string;
   slug: string;
@@ -64,19 +70,19 @@ interface Category {
   isActive: boolean;
 }
 
-interface CategoryTableProps {
-  categories: Category[];
-  loading: boolean;
-}
-
-export default function CategoryTable({
-  categories,
-  loading,
-}: CategoryTableProps) {
+export default function CategoryTable() {
   const dispatch = useDispatch();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  // Table states
+  // ⚙️ Backend pagination state
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
+
+  // 🧩 Fetch from backend
+  const { data, isLoading } = useGetCategoriesQuery({ page, limit });
+  const categories = data?.data || [];
+  const pagination = data?.pagination;
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -84,8 +90,6 @@ export default function CategoryTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
-  // AlertDialog state
   const [openDialog, setOpenDialog] = React.useState(false);
   const [selectedCategory, setSelectedCategory] =
     React.useState<Category | null>(null);
@@ -94,18 +98,18 @@ export default function CategoryTable({
     try {
       await deleteCategory(slug).unwrap();
       toast.success("Category deleted successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete category");
     }
   };
 
-  // 🧩 Table Columns
   const columns: ColumnDef<Category>[] = [
     {
       accessorKey: "name",
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="cursor-pointer"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Name
@@ -161,7 +165,6 @@ export default function CategoryTable({
       enableHiding: false,
       cell: ({ row }) => {
         const category = row.original;
-
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -176,18 +179,17 @@ export default function CategoryTable({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => dispatch(openModal(category))}
-                className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-md transition-all"
+                className="flex items-center gap-2 px-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-md transition-all"
               >
-                <SquarePen className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                <SquarePen className="h-4 w-4" />
                 <span>Edit</span>
               </DropdownMenuItem>
-              {/* 🗑️ Delete Action */}
               <DropdownMenuItem
                 onClick={() => {
                   setSelectedCategory(category);
                   setOpenDialog(true);
                 }}
-                className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/50 rounded-md transition-all"
+                className="flex items-center gap-2 px-2 py-2 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-md transition-all"
               >
                 <Trash className="h-4 w-4" />
                 <span>Delete</span>
@@ -200,25 +202,19 @@ export default function CategoryTable({
   ];
 
   const table = useReactTable({
-    data: categories || [],
+    data: categories,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
+    state: { sorting, columnFilters, columnVisibility, rowSelection },
   });
 
-  if (loading)
+  if (isLoading)
     return <div className="text-center py-6">Loading categories...</div>;
 
   return (
@@ -228,8 +224,8 @@ export default function CategoryTable({
         <Input
           placeholder="Filter by name..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
+          onChange={(e) =>
+            table.getColumn("name")?.setFilterValue(e.target.value)
           }
           className="max-w-sm"
         />
@@ -243,15 +239,14 @@ export default function CategoryTable({
           <DropdownMenuContent align="end">
             {table
               .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
+              .filter((col) => col.getCanHide())
+              .map((col) => (
                 <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  key={col.id}
+                  checked={col.getIsVisible()}
+                  onCheckedChange={(val) => col.toggleVisibility(!!val)}
                 >
-                  {column.id}
+                  {col.id}
                 </DropdownMenuCheckboxItem>
               ))}
           </DropdownMenuContent>
@@ -262,32 +257,25 @@ export default function CategoryTable({
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id}>
+                {hg.headers.map((h) => (
+                  <TableHead key={h.id}>
+                    {h.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
             ))}
           </TableHeader>
-
           <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+            {categories.length ? (
+              table.getRowModel().rows.map((r) => (
+                <TableRow key={r.id}>
+                  {r.getVisibleCells().map((c) => (
+                    <TableCell key={c.id}>
+                      {flexRender(c.column.columnDef.cell, c.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -306,39 +294,26 @@ export default function CategoryTable({
         </Table>
       </div>
 
-      {/* 🔢 Pagination */}
-      <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} total categories
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      {/* ✅ Pagination */}
+      {pagination && (
+        <CategoryPagination
+          pagination={pagination}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
 
-      {/* 🧱 AlertDialog — stays outside dropdown */}
+      {/* 🧱 Delete Alert */}
       <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. It will permanently delete the
-              category{" "}
+              This action cannot be undone. It will permanently delete{" "}
               <span className="font-semibold">
                 “{selectedCategory?.name ?? ""}”
               </span>
