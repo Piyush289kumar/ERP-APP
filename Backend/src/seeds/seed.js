@@ -90,31 +90,33 @@ const createAdminAndUsers = async () => {
 
 const createCategories = async () => {
   const categories = [];
-  const samples = [
-    "Technology",
-    "Mobile",
-    "Health",
-    "Business",
-    "Lifestyle",
-    "Travel",
-  ];
+  const adminUser = await User.findOne(); // use one user as createdBy
 
-  for (let i = 0; i < COUNTS.categories; i++) {
-    const name = samples[i] || faker.commerce.department();
-    const slug = slugify(name, { lower: true, strict: true });
-    let category = await Category.findOne({ slug });
-    if (!category) {
-      category = await Category.create({
-        name,
-        slug,
-        description: faker.lorem.sentence(),
-        createdBy: (await User.findOne())?._id || null,
-      });
-    }
-    categories.push(category);
+  // ⚙️ Generate 5000 unique category names
+  const total = 5000;
+  const nameSet = new Set();
+
+  while (nameSet.size < total) {
+    nameSet.add(faker.commerce.department() + " " + faker.word.adjective());
   }
-  return categories;
+
+  console.log(`🧱 Generating ${nameSet.size} unique categories...`);
+
+  // 💾 Bulk insert for performance
+  const categoryDocs = Array.from(nameSet).map((name) => ({
+    name,
+    slug: slugify(name, { lower: true, strict: true }),
+    description: faker.lorem.sentence(),
+    createdBy: adminUser?._id || null,
+  }));
+
+  await Category.insertMany(categoryDocs, { ordered: false });
+
+  console.log(`✅ Successfully inserted ${categoryDocs.length} categories.`);
+  return categoryDocs;
 };
+
+export default createCategories;
 
 const createBlogs = async (users, categories) => {
   const blogs = [];
@@ -284,15 +286,15 @@ const run = async () => {
     // NOTE: adjust or remove lines below if you want to clear DB before seeding.
     // await mongoose.connection.dropDatabase(); // uncomment to drop DB before seeding
 
-    const users = await createAdminAndUsers();
+    // const users = await createAdminAndUsers();
     const categories = await createCategories();
-    const blogs = await createBlogs(users, categories);
-    await createComments(users, blogs);
-    await createTestimonials(users);
-    await createGallery(users);
-    await createPolicies(users);
-    await createServices(users);
-    await createContacts(users);
+    // const blogs = await createBlogs(users, categories);
+    // await createComments(users, blogs);
+    // await createTestimonials(users);
+    // await createGallery(users);
+    // await createPolicies(users);
+    // await createServices(users);
+    // await createContacts(users);
 
     console.log("✅ Seeding completed.");
     process.exit(0);
