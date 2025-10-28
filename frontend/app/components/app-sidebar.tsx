@@ -12,8 +12,8 @@ import {
   Send,
   Settings2,
   SquareTerminal,
+  Folder,
 } from "lucide-react";
-
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
 import { NavSecondary } from "~/components/nav-secondary";
@@ -27,146 +27,77 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
-import { useNavigate } from "react-router";
-import { getToken } from "~/utils/auth";
-import axios from "axios";
 import { useUserProfile } from "~/features/user/userApi";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import type { RootState } from "~/redux/store";
-import { setUser } from "~/features/user/userSlice";
-
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+import { useLocation } from "react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // Fetch + Sync user profile (TanStack + Redux)
   const { isLoading } = useUserProfile();
-  // Access user directly from Redux store
   const user = useSelector((state: RootState) => state.user);
+  const location = useLocation();
+
+  // ✅ Determine active route
+  const isActive = (path: string) => location.pathname.includes(path);
+
+  const data = {
+    user: {
+      name: "shadcn",
+      email: "m@example.com",
+      avatar: "/avatars/shadcn.jpg",
+    },
+    navMain: [
+      {
+        title: "Dashboard",
+        url: "/admin/dashboard",
+        icon: SquareTerminal,
+        isActive: isActive("/admin/dashboard"),
+      },
+      {
+        title: "Models",
+        url: "/admin/models",
+        icon: Bot,
+        isActive: isActive("/admin/models"),
+        items: [
+          { title: "All Categories", url: "/admin/category" },
+          { title: "Create New", url: "/admin/category/new" },
+          { title: "Manage", url: "/admin/category/manage" },
+        ],
+      },
+      {
+        title: "Categories",
+        url: "/admin/category",
+        icon: Folder,
+        isActive: isActive("/admin/category"),
+        
+      },
+      {
+        title: "Documentation",
+        url: "/docs",
+        icon: BookOpen,
+        isActive: isActive("/docs"),
+      },
+      {
+        title: "Settings",
+        url: "/admin/settings",
+        icon: Settings2,
+        isActive: isActive("/admin/settings"),
+      },
+    ],
+    navSecondary: [
+      { title: "Support", url: "#", icon: LifeBuoy },
+      { title: "Feedback", url: "#", icon: Send },
+    ],
+    projects: [
+      { name: "Design Engineering", url: "#", icon: Frame },
+      { name: "Sales & Marketing", url: "#", icon: PieChart },
+      { name: "Travel", url: "#", icon: Map },
+    ],
+  };
 
   return (
     <Sidebar variant="inset" {...props}>
+      {/* Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -179,20 +110,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="truncate font-medium">
                     {import.meta.env.VITE_APP_NAME || "React App"}
                   </span>
-                  <span className="truncate text-xs">Enterprise</span>
+                  <span className="truncate text-xs">Admin Panel</span>
                 </div>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
+      {/* Main Content */}
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+
+      {/* Footer */}
       <SidebarFooter>
-        {/* ✅ Show loading, then user */}
         {isLoading ? (
           <div className="p-2 text-xs text-muted-foreground">
             Loading user...
