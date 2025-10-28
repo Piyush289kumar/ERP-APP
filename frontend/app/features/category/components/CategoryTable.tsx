@@ -25,7 +25,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  MoreHorizontal,
+  SquarePen,
+  Trash,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,19 +69,26 @@ interface CategoryTableProps {
   loading: boolean;
 }
 
-export default function CategoryTable({ categories, loading }: CategoryTableProps) {
+export default function CategoryTable({
+  categories,
+  loading,
+}: CategoryTableProps) {
   const dispatch = useDispatch();
   const [deleteCategory] = useDeleteCategoryMutation();
 
   // Table states
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   // AlertDialog state
   const [openDialog, setOpenDialog] = React.useState(false);
-  const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    React.useState<Category | null>(null);
 
   const handleDelete = async (slug: string) => {
     try {
@@ -99,7 +112,9 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("name")}</div>
+      ),
     },
     {
       accessorKey: "slug",
@@ -118,7 +133,9 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="truncate max-w-[250px]">{row.getValue("description")}</div>
+        <div className="truncate max-w-[250px]">
+          {row.getValue("description")}
+        </div>
       ),
     },
     {
@@ -129,7 +146,9 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
         return (
           <div
             className={
-              value ? "text-green-600 font-semibold" : "text-red-600 font-semibold"
+              value
+                ? "text-green-600 font-semibold"
+                : "text-red-600 font-semibold"
             }
           >
             {value ? "Active" : "Inactive"}
@@ -154,18 +173,24 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
 
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => dispatch(openModal(category))}>
-                Edit
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-red-600 cursor-pointer"
+                onClick={() => dispatch(openModal(category))}
+                className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-md transition-all"
+              >
+                <SquarePen className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              {/* 🗑️ Delete Action */}
+              <DropdownMenuItem
                 onClick={() => {
                   setSelectedCategory(category);
                   setOpenDialog(true);
                 }}
+                className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/50 rounded-md transition-all"
               >
-                Delete
+                <Trash className="h-4 w-4" />
+                <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -193,7 +218,8 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
     },
   });
 
-  if (loading) return <div className="text-center py-6">Loading categories...</div>;
+  if (loading)
+    return <div className="text-center py-6">Loading categories...</div>;
 
   return (
     <div className="w-full">
@@ -242,7 +268,10 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -255,14 +284,20 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center h-24">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center h-24"
+                >
                   No categories found.
                 </TableCell>
               </TableRow>
@@ -302,10 +337,12 @@ export default function CategoryTable({ categories, loading }: CategoryTableProp
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. It will permanently delete the category{" "}
+              This action cannot be undone. It will permanently delete the
+              category{" "}
               <span className="font-semibold">
                 “{selectedCategory?.name ?? ""}”
-              </span>.
+              </span>
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
