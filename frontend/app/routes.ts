@@ -11,7 +11,15 @@ export default [
 
     // Admin routes with AdminLayout wrapper
     route("admin", "admin/layout.tsx", [
+
+        // Dashboard Route.
         route("dashboard", "routes/protected/dashboard-wrapper.tsx"),
+
+
+        // Category Route.
+        route("category", "routes/protected/category-wrapper.tsx"),
+
+        // User Routes
         route("users/profile", "routes/protected/user-wrapper.tsx"),
     ]),
 
