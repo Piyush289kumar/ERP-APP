@@ -17,6 +17,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Fragment } from "react/jsx-runtime";
+import ThemeSwitcher from "~/components/ThemeSwitcher";
 
 export default function AdminLayout({
   children,
@@ -57,6 +58,10 @@ export default function AdminLayout({
                 ))}
               </BreadcrumbList>
             </Breadcrumb>
+          </div>
+
+          <div className="px-4">
+            <ThemeSwitcher />
           </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4">

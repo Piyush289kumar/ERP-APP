@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
@@ -27,39 +29,46 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
 
-  // ✅ Load theme safely on client only
+  // ✅ Load stored theme
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const storedTheme = localStorage.getItem(storageKey) as Theme | null;
-    if (storedTheme) {
-      setThemeState(storedTheme);
-    } else {
-      setThemeState(defaultTheme);
-    }
+    setThemeState(storedTheme || defaultTheme);
   }, [defaultTheme, storageKey]);
 
-  // ✅ Apply theme to <html>
+  // ✅ Apply theme to <html> and listen to system changes
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    const root = document.documentElement;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    const activeTheme =
-      theme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"
-        : theme;
+    const applyTheme = (newTheme: Theme) => {
+      root.classList.remove("light", "dark");
+      const activeTheme =
+        newTheme === "system"
+          ? mediaQuery.matches
+            ? "dark"
+            : "light"
+          : newTheme;
+      root.classList.add(activeTheme);
+    };
 
-    root.classList.add(activeTheme);
+    applyTheme(theme);
+
+    // ✅ Auto-update when system theme changes
+    const handleChange = () => {
+      if (theme === "system") applyTheme("system");
+    };
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
   }, [theme]);
 
-  // ✅ Handle theme change safely
   const setTheme = (newTheme: Theme) => {
     if (typeof window === "undefined") return;
-
     localStorage.setItem(storageKey, newTheme);
     setThemeState(newTheme);
   };
@@ -71,10 +80,4 @@ export function ThemeProvider({
   );
 }
 
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
-};
+export const useTheme = () => useContext(ThemeProviderContext);

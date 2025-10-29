@@ -41,11 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-     <body>
+      <body>
         <Provider store={store}>
           <QueryProvider>
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-                {children}
+              {children}
               <ScrollRestoration />
               <Scripts />
             </ThemeProvider>
