@@ -1,5 +1,5 @@
-import CategoryFormPage from "~/features/category/CategoryFormPage";
+import CategoryFormPage from "./CategoryFormPage";
 
-export default function EditCategoryWrapper() {
+export default function EditCategory() {
   return <CategoryFormPage mode="edit" />;
 }

@@ -1,5 +1,6 @@
 import slugify from "slugify";
 import Category from "../models/blogs/category.model.js";
+import { uploadToCloudinary } from "../utils/cloudinaryService.js";
 
 export const getCategories = async (req, res) => {
   try {
@@ -45,20 +46,17 @@ export const modifyCategory = async (req, res) => {
       isActive,
       isFeatured,
       showInMenu,
-      image,
-      icon,
       translations,
     } = req.body;
 
-    // Validate required fields
     if (!name) {
-      return res.status(400).json({ message: "Category name is required..." });
+      return res.status(400).json({ message: "Category name is required." });
     }
 
-    // Generate Slug via Category Name if Slug is missing
+    // Generate slug from name
     const slug = slugify(name, { lower: true, strict: true });
 
-    // Check if Category already exists when creating new
+    // Prevent duplicate slug when creating
     if (!id) {
       const existing = await Category.findOne({ slug });
       if (existing) {
@@ -69,15 +67,47 @@ export const modifyCategory = async (req, res) => {
     }
 
     let category;
+    let imageUrl = null;
+    let iconUrl = null;
 
-    // If `id` exists -> Update Category
+    // Upload image if provided
+    if (req.files?.image?.[0]?.path) {
+      const uploadImg = await uploadToCloudinary(
+        req.files.image[0].path,
+        "categories/images"
+      );
+      imageUrl = uploadImg.secure_url;
+    }
+
+    // Upload icon if provided
+    if (req.files?.icon?.[0]?.path) {
+      const uploadIcon = await uploadToCloudinary(
+        req.files.icon[0].path,
+        "categories/icons"
+      );
+      iconUrl = uploadIcon.secure_url;
+    }
+
+    // If updating
     if (id) {
       category = await Category.findById(id);
       if (!category) {
-        return res.status(404).json({ message: "Category not found.." });
+        return res.status(404).json({ message: "Category not found." });
       }
 
-      // Update Fields
+      // If new image uploaded, delete old one
+      if (imageUrl && category.image) {
+        const oldImagePublicId = category.image.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`categories/images/${oldImagePublicId}`);
+      }
+
+      // If new icon uploaded, delete old one
+      if (iconUrl && category.icon) {
+        const oldIconPublicId = category.icon.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`categories/icons/${oldIconPublicId}`);
+      }
+
+      // Update fields
       category.name = name || category.name;
       category.slug = slug || category.slug;
       category.description = description || category.description;
@@ -86,8 +116,8 @@ export const modifyCategory = async (req, res) => {
       category.isActive = isActive ?? category.isActive;
       category.isFeatured = isFeatured ?? category.isFeatured;
       category.showInMenu = showInMenu ?? category.showInMenu;
-      category.image = image || category.image;
-      category.icon = icon || category.icon;
+      category.image = imageUrl || category.image;
+      category.icon = iconUrl || category.icon;
       category.translations = translations || category.translations;
       category.updatedBy = req.user._id;
 
@@ -98,8 +128,7 @@ export const modifyCategory = async (req, res) => {
         category,
       });
     } else {
-      // Else -> Create a New Category
-
+      // Create new category
       category = await Category.create({
         name,
         slug,
@@ -109,13 +138,13 @@ export const modifyCategory = async (req, res) => {
         isActive,
         isFeatured,
         showInMenu,
-        image,
-        icon,
+        image: imageUrl,
+        icon: iconUrl,
         translations,
         createdBy: req.user._id,
       });
 
-      // If Sub-Category -> Add Reference to Parent
+      // Link with parent if it exists
       if (parentCategory) {
         const parent = await Category.findById(parentCategory);
         if (parent) {

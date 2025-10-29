@@ -1,43 +1,61 @@
 // app/features/category/index.tsx
 
+"use client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
-import { useGetCategoriesQuery, useDeleteCategoryMutation } from "./categoryApi";
-import Table from "./components/Table";
-// import Pagination from "./components/Pagination";
 import { toast } from "sonner";
-import { Pagination } from "~/components/ui/pagination";
+import {
+  useGetCategoriesQuery,
+  useDeleteCategoryMutation,
+} from "./categoryApi";
+import { CrudTable, CrudPagination } from "@/components/crud";
+import React from "react";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
-  const { data, isLoading, refetch } = useGetCategoriesQuery({});
+  const [page, setPage] = React.useState(1);
+  const { data, isLoading, refetch } = useGetCategoriesQuery({ page });
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (row: any) => {
     try {
-      await deleteCategory(id).unwrap();
+      await deleteCategory(row._id).unwrap();
       toast.success("Category deleted successfully");
       refetch();
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete category");
     }
   };
+
+  const columns = [
+    { key: "name", label: "Name" },
+    { key: "description", label: "Description" },
+  ];
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Categories</h1>
-        <Button onClick={() => navigate("/admin/category/create")}>+ Add Category</Button>
+        <Button onClick={() => navigate("/admin/category/create")}>
+          + Add Category
+        </Button>
       </div>
 
-      <Table
-        categories={data?.data || []}
+      <CrudTable
+        columns={columns}
+        data={data?.data || []}
         loading={isLoading}
-        onEdit={(id) => navigate(`/admin/category/edit/${id}`)}
+        onEdit={(row) => navigate(`/admin/category/edit/${row._id}`)}
         onDelete={handleDelete}
       />
 
-      <Pagination />
+      {data?.total && (
+        <CrudPagination
+          page={page}
+          totalPages={Math.ceil(data.total / 20)}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

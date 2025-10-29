@@ -1,5 +1,5 @@
-import CategoryFormPage from "~/features/category/CategoryFormPage";
+import CategoryFormPage from "./CategoryFormPage";
 
-export default function CreateCategoryWrapper() {
+export default function CreateCategory() {
   return <CategoryFormPage mode="create" />;
 }
