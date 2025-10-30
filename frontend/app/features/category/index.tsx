@@ -10,6 +10,7 @@ import {
 } from "./categoryApi";
 import { CrudTable, CrudPagination } from "@/components/crud";
 import React from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
@@ -27,9 +28,15 @@ export default function CategoryPage() {
     }
   };
 
-  const columns = [
-    { key: "name", label: "Name" },
-    { key: "description", label: "Description" },
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+    },
   ];
 
   return (

@@ -1,5 +1,4 @@
-// app/components/crud/CrudTable.tsx
-
+// app/components/crud/DataTable.tsx
 "use client";
 
 import * as React from "react";
@@ -26,9 +25,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 
-interface CrudTableProps<TData> {
+interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
   onEdit?: (row: TData) => void;
@@ -36,13 +35,13 @@ interface CrudTableProps<TData> {
   loading?: boolean;
 }
 
-export function CrudTable<TData>({
+export function DataTable<TData>({
   columns,
   data,
   onEdit,
   onDelete,
   loading,
-}: CrudTableProps<TData>) {
+}: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -87,7 +86,7 @@ export function CrudTable<TData>({
       />
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-md border">
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
