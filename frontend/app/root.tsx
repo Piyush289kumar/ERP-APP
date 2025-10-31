@@ -17,6 +17,7 @@ import { SidebarProvider } from "~/components/ui/sidebar";
 import { QueryProvider } from "./providers/QueryProvider";
 import { Provider } from "react-redux";
 import { store } from "~/redux/store";
+import { Toaster } from "~/components/ui/sonner";
 // import { ModeToggle } from "~/components/mode-toggle";
 
 export const links: Route.LinksFunction = () => [
@@ -46,6 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <QueryProvider>
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
               {children}
+              <Toaster position="top-right" />
               <ScrollRestoration />
               <Scripts />
             </ThemeProvider>
