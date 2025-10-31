@@ -16,6 +16,7 @@ export const getCategories = async (req, res) => {
 
     // Fetch paginated categories
     const categories = await Category.find()
+      .populate("createdBy", "name email")
       .sort({ createdAt: -1 }) // latest first
       .skip(skip)
       .limit(limit);
@@ -35,10 +36,10 @@ export const getCategories = async (req, res) => {
   }
 };
 
-export const modifyCategory = async (req, res) => {
+// POST Request
+export const createCategory = async (req, res) => {
   try {
     const {
-      id, // Optional for update
       name,
       description,
       parentCategory,
@@ -55,18 +56,14 @@ export const modifyCategory = async (req, res) => {
 
     // Generate slug from name
     const slug = slugify(name, { lower: true, strict: true });
+    const existing = await Category.findOne({ slug });
 
-    // Prevent duplicate slug when creating
-    if (!id) {
-      const existing = await Category.findOne({ slug });
-      if (existing) {
-        return res
-          .status(400)
-          .json({ message: "Category with this name already exists." });
-      }
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "Category with this name already exists." });
     }
 
-    let category;
     let imageUrl = null;
     let iconUrl = null;
 
@@ -88,76 +85,120 @@ export const modifyCategory = async (req, res) => {
       iconUrl = uploadIcon.secure_url;
     }
 
-    // If updating
-    if (id) {
-      category = await Category.findById(id);
-      if (!category) {
-        return res.status(404).json({ message: "Category not found." });
+    // Create new category
+    const category = await Category.create({
+      name,
+      slug,
+      description,
+      parentCategory: parentCategory || null,
+      seo,
+      isActive,
+      isFeatured,
+      showInMenu,
+      image: imageUrl,
+      icon: iconUrl,
+      translations,
+      createdBy: req.user._id,
+    });
+
+    // Link with parent if it exists
+    if (parentCategory) {
+      const parent = await Category.findById(parentCategory);
+      if (parent) {
+        parent.subCategories.push(category._id);
+        await parent.save();
       }
+    }
 
-      // If new image uploaded, delete old one
-      if (imageUrl && category.image) {
-        const oldImagePublicId = category.image.split("/").pop().split(".")[0];
-        await destroyFromCloudinary(`categories/images/${oldImagePublicId}`);
-      }
+    return res.status(201).json({
+      message: "Category created successfully.",
+      category,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
 
-      // If new icon uploaded, delete old one
-      if (iconUrl && category.icon) {
-        const oldIconPublicId = category.icon.split("/").pop().split(".")[0];
-        await destroyFromCloudinary(`categories/icons/${oldIconPublicId}`);
-      }
+// PUT Request
+// NEW: Handles updating an existing category (for PUT requests)
+export const updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params; // Get ID from URL parameter
+    const {
+      name,
+      description,
+      parentCategory,
+      seo,
+      isActive,
+      isFeatured,
+      showInMenu,
+      translations,
+    } = req.body;
 
-      // Update fields
-      category.name = name || category.name;
-      category.slug = slug || category.slug;
-      category.description = description || category.description;
-      category.parentCategory = parentCategory || category.parentCategory;
-      category.seo = seo || category.seo;
-      category.isActive = isActive ?? category.isActive;
-      category.isFeatured = isFeatured ?? category.isFeatured;
-      category.showInMenu = showInMenu ?? category.showInMenu;
-      category.image = imageUrl || category.image;
-      category.icon = iconUrl || category.icon;
-      category.translations = translations || category.translations;
-      category.updatedBy = req.user._id;
+    let category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
 
-      await category.save();
-
-      return res.status(200).json({
-        message: "Category updated successfully.",
-        category,
-      });
-    } else {
-      // Create new category
-      category = await Category.create({
-        name,
-        slug,
-        description,
-        parentCategory: parentCategory || null,
-        seo,
-        isActive,
-        isFeatured,
-        showInMenu,
-        image: imageUrl,
-        icon: iconUrl,
-        translations,
-        createdBy: req.user._id,
-      });
-
-      // Link with parent if it exists
-      if (parentCategory) {
-        const parent = await Category.findById(parentCategory);
-        if (parent) {
-          parent.subCategories.push(category._id);
-          await parent.save();
+    // Handle image update
+    if (req.files?.image?.[0]?.path) {
+      // If a new image is uploaded and an old one exists, delete it first
+      if (category.image) {
+        try {
+          const oldPublicId = category.image.split("/").pop().split(".")[0];
+          await destroyFromCloudinary(`categories/images/${oldPublicId}`);
+        } catch (e) {
+          console.warn("Old image deletion failed, continuing...", e.message);
         }
       }
-
-      return res.status(201).json({
-        message: "Category created successfully.",
-        category,
-      });
+      const uploadImg = await uploadToCloudinary(
+        req.files.image[0].path,
+        "categories/images"
+      );
+      category.image = uploadImg.secure_url;
     }
+
+    // Handle icon update
+    if (req.files?.icon?.[0]?.path) {
+      // If a new icon is uploaded and an old one exists, delete it first
+      if (category.icon) {
+        try {
+          const oldPublicId = category.icon.split("/").pop().split(".")[0];
+          await destroyFromCloudinary(`categories/icons/${oldPublicId}`);
+        } catch (e) {
+          console.warn("Old icon deletion failed, continuing...", e.message);
+        }
+      }
+      // Corrected from req.files.image[0].path to req.files.icon[0].path
+      const uploadIcon = await uploadToCloudinary(
+        req.files.icon[0].path,
+        "categories/icons"
+      );
+      category.icon = uploadIcon.secure_url;
+    }
+
+    // Update fields
+    if (name) {
+      category.name = name;
+      category.slug = slugify(name, { lower: true, strict: true });
+    }
+    category.description = description ?? category.description;
+    category.parentCategory = parentCategory ?? category.parentCategory;
+    category.seo = seo ?? category.seo;
+    category.isActive = isActive ?? category.isActive;
+    category.isFeatured = isFeatured ?? category.isFeatured;
+    category.showInMenu = showInMenu ?? category.showInMenu;
+    category.image = imageUrl;
+    category.icon = iconUrl;
+    category.translations = translations ?? category.translations;
+    category.updatedBy = req.user._id;
+
+    await category.save();
+
+    return res.status(200).json({
+      message: "Category updated successfully.",
+      data: category,
+    });
   } catch (error) {
     res.status(500).json({ message: "Internal Error", error: error.message });
   }

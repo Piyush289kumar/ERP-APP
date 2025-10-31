@@ -1,28 +1,64 @@
 // app/features/category/index.tsx
-
 "use client";
+
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   useGetCategoriesQuery,
   useDeleteCategoryMutation,
-} from "./categoryApi";
-import { CrudTable, CrudPagination } from "@/components/crud";
+  useUpdateCategoryMutation,
+} from "~/features/category/categoryApi";
+import { CrudDataTable } from "@/components/crud";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  CirclePlus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Separator } from "@radix-ui/react-dropdown-menu";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
-  const { data, isLoading, refetch } = useGetCategoriesQuery({ page });
+  const { data, isLoading } = useGetCategoriesQuery({ page });
+
+  const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
+
+  const handleToggleActive = async (category: any) => {
+    try {
+      await updateCategory({
+        id: category._id,
+        isActive: !category.isActive,
+      }).unwrap();
+      toast.success(
+        `Category "${category.name}" has been ${
+          category.isActive ? "deactivated" : "activated"
+        }.`
+      );
+    } catch (error) {
+      toast.error("Failed to update category status.");
+    }
+  };
 
   const handleDelete = async (row: any) => {
     try {
       await deleteCategory(row._id).unwrap();
       toast.success("Category deleted successfully");
-      refetch();
     } catch {
       toast.error("Failed to delete category");
     }
@@ -30,39 +66,149 @@ export default function CategoryPage() {
 
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: "name",
-      header: "Name",
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
     },
     {
-      accessorKey: "description",
-      header: "Description",
+      accessorKey: "image",
+      header: "Image",
+      cell: ({ row }) => (
+        <img
+          src={row.original.image}
+          alt={row.original.name}
+          className="h-10 w-10 rounded-full object-cover"
+        />
+      ),
+      enableSorting: false, // You typically don't sort by image
+    },
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      // Updated the "Active" column with a sortable header
+      accessorKey: "isActive",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Active
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Switch
+          checked={row.original.isActive}
+          onCheckedChange={() => handleToggleActive(row.original)}
+          aria-label="Toggle category status"
+        />
+      ),
+    },
+    {
+      accessorKey: "createdBy.name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created By
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => row.original.createdBy?.name || "N/A",
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const category = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => navigate(`/admin/category/edit/${category._id}`)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDelete(category)}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
+
+  const categoryData = data?.data ?? [];
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Categories</h1>
         <Button onClick={() => navigate("/admin/category/create")}>
-          + Add Category
+          <CirclePlus className="mr-2 h-4 w-4" /> Add Category
         </Button>
       </div>
-
-      <CrudTable
+      <CrudDataTable
+        data={categoryData}
         columns={columns}
-        data={data?.data || []}
-        loading={isLoading}
-        onEdit={(row) => navigate(`/admin/category/edit/${row._id}`)}
-        onDelete={handleDelete}
+        isLoading={isLoading}
+        searchKey="name"
       />
-
-      {data?.total && (
-        <CrudPagination
-          page={page}
-          totalPages={Math.ceil(data.total / 20)}
-          onPageChange={setPage}
-        />
-      )}
     </div>
   );
 }

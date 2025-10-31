@@ -1,25 +1,18 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
 import {
+  createCategory,
   destroyCategoryBySlug,
   getCategories,
-  modifyCategory,
+  updateCategory,
 } from "../controllers/category.controller.js";
 import upload from "../config/multer.js";
 
 const router = Router();
 
-router.get(
-  "/",
-  ensureAuth,
-  async (req, res, next) => {
-    console.log("Fetching Categories...");
-    next();
-  },
-  getCategories
-);
+router.get("/", ensureAuth, getCategories);
 
-// Create / Update category with file upload
+// Create category with file upload
 router.post(
   "/",
   ensureAuth,
@@ -27,7 +20,18 @@ router.post(
     { name: "image", maxCount: 1 },
     { name: "icon", maxCount: 1 },
   ]),
-  modifyCategory
+  createCategory
+);
+
+// Create category with file upload
+router.put(
+  "/:id",
+  ensureAuth,
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "icon", maxCount: 1 },
+  ]),
+  updateCategory
 );
 
 router.delete("/:slug", ensureAuth, destroyCategoryBySlug);
