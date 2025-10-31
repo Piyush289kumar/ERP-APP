@@ -204,6 +204,39 @@ export const updateCategory = async (req, res) => {
   }
 };
 
+// NEW: Handles partial updates for a category (for PATCH requests)
+export const partiallyUpdateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body; // Contains only the fields to update, e.g., { isActive: false }
+
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    // Dynamically apply updates from the request body
+    Object.keys(updateData).forEach((key) => {
+      category[key] = updateData[key];
+    });
+
+    // If the name is being updated, also update the slug
+    if (updateData.name) {
+      category.slug = slugify(updateData.name, { lower: true, strict: true });
+    }
+
+    category.updatedBy = req.user._id;
+    await category.save();
+
+    return res.status(200).json({
+      message: "Category updated successfully.",
+      data: category,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
 export const destroyCategoryBySlug = async (req, res) => {
   try {
     const { slug } = req.params; // Use URL param

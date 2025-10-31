@@ -4,6 +4,7 @@ import {
   createCategory,
   destroyCategoryBySlug,
   getCategories,
+  partiallyUpdateCategory,
   updateCategory,
 } from "../controllers/category.controller.js";
 import upload from "../config/multer.js";
@@ -23,7 +24,7 @@ router.post(
   createCategory
 );
 
-// Create category with file upload
+// update category with file upload
 router.put(
   "/:id",
   ensureAuth,
@@ -32,6 +33,13 @@ router.put(
     { name: "icon", maxCount: 1 },
   ]),
   updateCategory
+);
+
+// PATCH for partial updates (like toggling isActive)
+router.patch(
+  "/:id", // <-- Add this new route
+  ensureAuth,
+  partiallyUpdateCategory // Use the new controller (no multer needed)
 );
 
 router.delete("/:slug", ensureAuth, destroyCategoryBySlug);

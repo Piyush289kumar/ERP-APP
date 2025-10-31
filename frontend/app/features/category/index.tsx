@@ -18,7 +18,7 @@ import {
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
 } from "~/features/category/categoryApi";
-import { CrudDataTable, CrudPagination } from "@/components/crud";
+import { CrudDataTable } from "@/components/crud";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
