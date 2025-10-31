@@ -1,4 +1,5 @@
 // app/components/crud/CrudTable.tsx
+
 "use client";
 import * as React from "react";
 import {
@@ -12,7 +13,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,6 +33,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CrudPagination } from "./CrudPagination";
 import { RowsPerPageDropdownMenu } from "./RowsPerPageDropdownMenu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
+
 // Define props for the generic data table
 interface CrudDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -43,7 +55,10 @@ interface CrudDataTableProps<TData, TValue> {
   onPageChange: (page: number) => void; // Define the function signature
   pageSize: number;
   onPageSizeChange: (size: number) => void;
+  onDelete?: (item: TData) => Promise<void>;
+  deleteItemNameKey?: keyof TData;
 }
+
 export function CrudDataTable<TData, TValue>({
   columns,
   data,
@@ -54,6 +69,8 @@ export function CrudDataTable<TData, TValue>({
   onPageChange,
   pageSize,
   onPageSizeChange,
+  onDelete,
+  deleteItemNameKey = "record" as keyof TData,
 }: CrudDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -62,6 +79,31 @@ export function CrudDataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  // State for delete confirmation dialog
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState<TData | null>(null);
+
+  // Function to open the dialog, will be passed via meta
+  const openDeleteDialog = (item: TData) => {
+    if (!onDelete) return; // Don't open if no handler is provided
+    setItemToDelete(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Function to confirm and execute deletion
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete || !onDelete) return;
+    try {
+      await onDelete(itemToDelete);
+    } finally {
+      // Always close the dialog
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -81,6 +123,10 @@ export function CrudDataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+    },
+    // Provide openDeleteDialog to the table instance
+    meta: {
+      openDeleteDialog,
     },
   });
   return (
@@ -207,6 +253,41 @@ export function CrudDataTable<TData, TValue>({
           />
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader className="items-center">
+            <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
+              <TriangleAlertIcon className="text-destructive size-6" />
+            </div>
+            <AlertDialogTitle>
+              Delete{" "}
+              {itemToDelete ? (itemToDelete as any)[deleteItemNameKey] : "Item"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Are you sure you would like to do this?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setItemToDelete(null)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive text-white cursor-pointer"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

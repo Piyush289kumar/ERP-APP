@@ -1,4 +1,3 @@
-// app/features/category/index.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -21,13 +20,7 @@ import {
 import { CrudDataTable } from "@/components/crud";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  CirclePlus,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { CirclePlus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
 
 export default function CategoryPage() {
@@ -37,17 +30,14 @@ export default function CategoryPage() {
   const { data, isLoading } = useGetCategoriesQuery({ page, limit });
 
   const categoryData = data?.data ?? [];
-
-  // 2. Get totalPages from the API response's pagination object
   const totalPages = data?.pagination?.totalPages ?? 1;
 
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  // Handler to update limit and reset page number
   const handlePageSizeChange = (newSize: number) => {
     setLimit(newSize);
-    setPage(1); // Reset to the first page to avoid being on an invalid page
+    setPage(1);
   };
 
   const handleToggleActive = async (category: any) => {
@@ -66,9 +56,10 @@ export default function CategoryPage() {
     }
   };
 
-  const handleDelete = async (row: any) => {
+  // The function to perform the delete, passed to CrudDataTable
+  const handleDelete = async (item: any) => {
     try {
-      await deleteCategory(row._id).unwrap();
+      await deleteCategory(item._id).unwrap();
       toast.success("Category deleted successfully");
     } catch {
       toast.error("Failed to delete category");
@@ -76,6 +67,7 @@ export default function CategoryPage() {
   };
 
   const columns: ColumnDef<any>[] = [
+    // ... other columns (select, image, name, etc.)
     {
       id: "select",
       header: ({ table }) => (
@@ -108,75 +100,27 @@ export default function CategoryPage() {
           className="h-10 w-10 rounded-full object-cover"
         />
       ),
-      enableSorting: false, // You typically don't sort by image
+      enableSorting: false,
     },
     {
       accessorKey: "name",
-      header: ({ column }) => (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: "Name",
     },
     {
-      // Updated the "Active" column with a sortable header
       accessorKey: "isActive",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="cursor-pointer"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Active
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: "Active",
       cell: ({ row }) => (
         <Switch
           className="cursor-pointer"
           checked={row.original.isActive}
           onCheckedChange={() => handleToggleActive(row.original)}
-          aria-label="Toggle category status"
         />
       ),
     },
     {
-      accessorKey: "createdBy.name",
-      header: ({ column }) => (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Created By
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => row.original.createdBy?.name || "N/A",
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
-    },
-    {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) => {
+      cell: ({ row, table }) => {
         const category = row.original;
         return (
           <DropdownMenu>
@@ -196,7 +140,9 @@ export default function CategoryPage() {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => handleDelete(category)}
+                onClick={() =>
+                  (table.options.meta as any)?.openDeleteDialog(category)
+                }
                 className="text-red-600 focus:text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -227,6 +173,8 @@ export default function CategoryPage() {
         onPageChange={(newPage) => setPage(newPage)}
         pageSize={limit}
         onPageSizeChange={handlePageSizeChange}
+        onDelete={handleDelete} // Pass the delete handler
+        deleteItemNameKey="Record" // Specify the key for the item's name
       />
     </div>
   );
