@@ -114,6 +114,7 @@ export default function CategoryPage() {
       accessorKey: "name",
       header: ({ column }) => (
         <Button
+          className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -128,6 +129,7 @@ export default function CategoryPage() {
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="cursor-pointer"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Active
@@ -136,6 +138,7 @@ export default function CategoryPage() {
       ),
       cell: ({ row }) => (
         <Switch
+          className="cursor-pointer"
           checked={row.original.isActive}
           onCheckedChange={() => handleToggleActive(row.original)}
           aria-label="Toggle category status"
@@ -146,6 +149,7 @@ export default function CategoryPage() {
       accessorKey: "createdBy.name",
       header: ({ column }) => (
         <Button
+          className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -159,6 +163,7 @@ export default function CategoryPage() {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
+          className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -176,7 +181,7 @@ export default function CategoryPage() {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>

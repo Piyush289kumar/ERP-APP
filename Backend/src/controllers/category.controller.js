@@ -237,17 +237,41 @@ export const partiallyUpdateCategory = async (req, res) => {
   }
 };
 
-export const destroyCategoryBySlug = async (req, res) => {
+export const destroyCategoryById = async (req, res) => {
   try {
-    const { slug } = req.params; // Use URL param
+    const { id } = req.params;
 
-    if (!slug) {
-      return res.status(400).json({ message: "Category slug is required." });
+    if (!id) {
+      return res.status(400).json({ message: "Category ID is required." });
     }
 
-    const category = await Category.findOne({ slug });
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
+    }
+
+    // Optional: Delete associated images from Cloudinary before deleting the document
+    if (category.image) {
+      try {
+        const oldImagePublicId = category.image.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`categories/images/${oldImagePublicId}`);
+      } catch (e) {
+        console.warn(
+          "Could not delete category image from Cloudinary:",
+          e.message
+        );
+      }
+    }
+    if (category.icon) {
+      try {
+        const oldIconPublicId = category.icon.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`categories/icons/${oldIconPublicId}`);
+      } catch (e) {
+        console.warn(
+          "Could not delete category icon from Cloudinary:",
+          e.message
+        );
+      }
     }
 
     // Remove reference from parent category
@@ -261,11 +285,12 @@ export const destroyCategoryBySlug = async (req, res) => {
       }
     }
 
+    // This is the key correction: use findByIdAndDelete
     await Category.findByIdAndDelete(category._id);
 
     return res
       .status(200)
-      .json({ message: "Category is deleted successfully.", slug });
+      .json({ message: "Category deleted successfully.", id });
   } catch (error) {
     res.status(500).json({ message: "Internal Error", error: error.message });
   }

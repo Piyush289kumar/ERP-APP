@@ -2,7 +2,7 @@ import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
 import {
   createCategory,
-  destroyCategoryBySlug,
+  destroyCategoryById,
   getCategories,
   partiallyUpdateCategory,
   updateCategory,
@@ -42,6 +42,6 @@ router.patch(
   partiallyUpdateCategory // Use the new controller (no multer needed)
 );
 
-router.delete("/:slug", ensureAuth, destroyCategoryBySlug);
+router.delete("/:id", ensureAuth, destroyCategoryById);
 
 export default router;
