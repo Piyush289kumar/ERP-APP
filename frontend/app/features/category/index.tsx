@@ -29,15 +29,26 @@ import {
   Trash2,
 } from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Separator } from "@radix-ui/react-dropdown-menu";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
-  const { data, isLoading } = useGetCategoriesQuery({ page });
+  const [limit, setLimit] = React.useState(10);
+  const { data, isLoading } = useGetCategoriesQuery({ page, limit });
+
+  const categoryData = data?.data ?? [];
+
+  // 2. Get totalPages from the API response's pagination object
+  const totalPages = data?.pagination?.totalPages ?? 1;
 
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
+
+  // Handler to update limit and reset page number
+  const handlePageSizeChange = (newSize: number) => {
+    setLimit(newSize);
+    setPage(1); // Reset to the first page to avoid being on an invalid page
+  };
 
   const handleToggleActive = async (category: any) => {
     try {
@@ -193,11 +204,6 @@ export default function CategoryPage() {
     },
   ];
 
-  const categoryData = data?.data ?? [];
-
-  // 2. Get totalPages from the API response's pagination object
-  const totalPages = data?.pagination?.totalPages ?? 1;
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -214,6 +220,8 @@ export default function CategoryPage() {
         page={page}
         totalPages={totalPages}
         onPageChange={(newPage) => setPage(newPage)}
+        pageSize={limit}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

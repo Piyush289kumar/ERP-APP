@@ -1,8 +1,5 @@
 // app/components/crud/CrudTable.tsx
-
-// app/components/crud/CrudTable.tsx
 "use client";
-
 import * as React from "react";
 import {
   type ColumnDef,
@@ -17,7 +14,6 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,7 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CrudPagination } from "./CrudPagination";
-
+import { RowsPerPageDropdownMenu } from "./RowsPerPageDropdownMenu";
 // Define props for the generic data table
 interface CrudDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -46,8 +42,9 @@ interface CrudDataTableProps<TData, TValue> {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void; // Define the function signature
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
 }
-
 export function CrudDataTable<TData, TValue>({
   columns,
   data,
@@ -56,6 +53,8 @@ export function CrudDataTable<TData, TValue>({
   page,
   totalPages,
   onPageChange,
+  pageSize,
+  onPageSizeChange,
 }: CrudDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -64,7 +63,6 @@ export function CrudDataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
   const table = useReactTable({
     data,
     columns,
@@ -86,7 +84,6 @@ export function CrudDataTable<TData, TValue>({
       rowSelection,
     },
   });
-
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
@@ -186,17 +183,28 @@ export function CrudDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
+      <div className="flex items-center justify-between py-4">
+        {/* Left: Selected row count */}
+        <div className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-
-        <div className="space-x-2">
+        {/* Center: Rows per page dropdown */}
+        <div className="flex justify-center">
+          {/* 2. Pass the props down */}
+          <RowsPerPageDropdownMenu
+            pageSize={pageSize}
+            onPageSizeChange={onPageSizeChange}
+          />
+        </div>
+        {/* Right: Pagination controls */}
+        <div className="flex justify-end">
           <CrudPagination
             page={page}
             totalPages={totalPages}
             onPageChange={onPageChange}
+            pageSize={pageSize}
+            onPageSizeChange={onPageSizeChange}
           />
         </div>
       </div>
