@@ -20,7 +20,13 @@ import {
 import { CrudDataTable } from "@/components/crud";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { CirclePlus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  CirclePlus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
 
 export default function CategoryPage() {
@@ -104,19 +110,68 @@ export default function CategoryPage() {
     },
     {
       accessorKey: "name",
-      header: "Name",
+      header: ({ column }) => (
+        <Button
+          className="cursor-pointer"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
     },
     {
+      // Updated the "Active" column with a sortable header
       accessorKey: "isActive",
-      header: "Active",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="cursor-pointer"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Active
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
         <Switch
           className="cursor-pointer"
           checked={row.original.isActive}
           onCheckedChange={() => handleToggleActive(row.original)}
+          aria-label="Toggle category status"
         />
       ),
     },
+    {
+      accessorKey: "createdBy.name",
+      header: ({ column }) => (
+        <Button
+          className="cursor-pointer"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created By
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => row.original.createdBy?.name || "N/A",
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          className="cursor-pointer"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+    },
+
     {
       id: "actions",
       header: "Actions",
@@ -156,11 +211,11 @@ export default function CategoryPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-0 space-y-3">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Categories</h1>
         <Button onClick={() => navigate("/admin/category/create")}>
-          <CirclePlus className="mr-2 h-4 w-4" /> Add Category
+          <CirclePlus /> Add Category
         </Button>
       </div>
       <CrudDataTable

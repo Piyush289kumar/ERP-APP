@@ -13,7 +13,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, TriangleAlertIcon } from "lucide-react";
+import { ChevronDown, GitCompare, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -143,7 +143,7 @@ export function CrudDataTable<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
+              View <GitCompare  />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
