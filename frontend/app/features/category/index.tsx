@@ -18,7 +18,7 @@ import {
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
 } from "~/features/category/categoryApi";
-import { CrudDataTable } from "@/components/crud";
+import { CrudDataTable, CrudPagination } from "@/components/crud";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
@@ -195,6 +195,9 @@ export default function CategoryPage() {
 
   const categoryData = data?.data ?? [];
 
+  // 2. Get totalPages from the API response's pagination object
+  const totalPages = data?.pagination?.totalPages ?? 1;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -208,6 +211,9 @@ export default function CategoryPage() {
         columns={columns}
         isLoading={isLoading}
         searchKey="name"
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(newPage) => setPage(newPage)}
       />
     </div>
   );

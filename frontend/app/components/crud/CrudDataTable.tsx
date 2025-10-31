@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CrudPagination } from "./CrudPagination";
 
 // Define props for the generic data table
 interface CrudDataTableProps<TData, TValue> {
@@ -42,6 +43,9 @@ interface CrudDataTableProps<TData, TValue> {
   data: TData[];
   isLoading?: boolean;
   searchKey: string;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void; // Define the function signature
 }
 
 export function CrudDataTable<TData, TValue>({
@@ -49,6 +53,9 @@ export function CrudDataTable<TData, TValue>({
   data,
   isLoading = false,
   searchKey,
+  page,
+  totalPages,
+  onPageChange,
 }: CrudDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -61,10 +68,13 @@ export function CrudDataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    // Since we are doing server-side pagination, we disable the table's internal pagination
+    manualPagination: true,
+    pageCount: totalPages,
+    // ... other table options
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -82,9 +92,7 @@ export function CrudDataTable<TData, TValue>({
       <div className="flex items-center py-4">
         <Input
           placeholder={`Filter by ${searchKey}...`}
-          value={
-            (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-          }
+          value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn(searchKey)?.setFilterValue(event.target.value)
           }
@@ -183,23 +191,13 @@ export function CrudDataTable<TData, TValue>({
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
+
         <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+          <CrudPagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         </div>
       </div>
     </div>
