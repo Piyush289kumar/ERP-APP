@@ -18,6 +18,7 @@ import {
   useGetCategoriesQuery,
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
+  usePartiallyUpdateCategoryMutation,
 } from "~/features/category/categoryApi";
 import { CrudDataTable } from "@/components/crud";
 import React from "react";
@@ -41,6 +42,7 @@ export default function CategoryPage() {
   const totalPages = data?.pagination?.totalPages ?? 1;
 
   const [updateCategory] = useUpdateCategoryMutation();
+  const [partiallyUpdateCategory] = usePartiallyUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
 
   const handlePageSizeChange = (newSize: number) => {
@@ -50,10 +52,11 @@ export default function CategoryPage() {
 
   const handleToggleActive = async (category: any) => {
     try {
-      await updateCategory({
+      await partiallyUpdateCategory({
         id: category._id,
-        isActive: !category.isActive,
+        data: { isActive: !category.isActive }, // ✅ send small JSON
       }).unwrap();
+
       toast.success(
         `Category "${category.name}" has been ${
           category.isActive ? "deactivated" : "activated"
@@ -61,6 +64,42 @@ export default function CategoryPage() {
       );
     } catch (error) {
       toast.error("Failed to update category status.");
+    }
+  };
+
+  // ✅ Toggle Featured
+  const handleToggleFeatured = async (category: any) => {
+    try {
+      await partiallyUpdateCategory({
+        id: category._id,
+        data: { isFeatured: !category.isFeatured },
+      }).unwrap();
+
+      toast.success(
+        `Category "${category.name}" has been ${
+          category.isFeatured ? "unfeatured" : "marked as featured"
+        }.`
+      );
+    } catch {
+      toast.error("Failed to update featured status.");
+    }
+  };
+
+  // ✅ Toggle Show In Menu
+  const handleToggleShowInMenu = async (category: any) => {
+    try {
+      await partiallyUpdateCategory({
+        id: category._id,
+        data: { showInMenu: !category.showInMenu },
+      }).unwrap();
+
+      toast.success(
+        `Category "${category.name}" will ${
+          category.showInMenu ? "no longer" : "now"
+        } appear in the menu.`
+      );
+    } catch {
+      toast.error("Failed to update menu visibility.");
     }
   };
 
@@ -145,6 +184,49 @@ export default function CategoryPage() {
         />
       ),
     },
+    {
+      accessorKey: "isFeatured",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="cursor-pointer"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Featured
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Switch
+          className="cursor-pointer"
+          checked={row.original.isFeatured}
+          onCheckedChange={() => handleToggleFeatured(row.original)}
+          aria-label="Toggle featured status"
+        />
+      ),
+    },
+    {
+      accessorKey: "showInMenu",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="cursor-pointer"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Show In Menu
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Switch
+          className="cursor-pointer"
+          checked={row.original.showInMenu}
+          onCheckedChange={() => handleToggleShowInMenu(row.original)}
+          aria-label="Toggle menu visibility"
+        />
+      ),
+    },
+
     {
       accessorKey: "createdBy.name",
       header: ({ column }) => (

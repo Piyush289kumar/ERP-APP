@@ -4,6 +4,7 @@ import {
   createCategory,
   destroyCategoryById,
   getCategories,
+  getCategoryById,
   partiallyUpdateCategory,
   updateCategory,
 } from "../controllers/category.controller.js";
@@ -12,6 +13,9 @@ import upload from "../config/multer.js";
 const router = Router();
 
 router.get("/", ensureAuth, getCategories);
+
+// Get Categroy by ID
+router.get("/:id", ensureAuth, getCategoryById);
 
 // Create category with file upload
 router.post(

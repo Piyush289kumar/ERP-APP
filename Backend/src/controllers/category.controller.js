@@ -36,6 +36,30 @@ export const getCategories = async (req, res) => {
   }
 };
 
+// GET Request
+export const getCategoryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find category by ID and populate references if needed
+    const category = await Category.findById(id)
+      .populate("createdBy", "name email")
+      .populate("parentCategory", "name _id");
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    return res.status(200).json({
+      message: "Category fetched successfully.",
+      data: category,
+    });
+  } catch (error) {
+    console.error("Error fetching category by ID:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
 // POST Request
 export const createCategory = async (req, res) => {
   try {
@@ -128,7 +152,7 @@ export const createCategory = async (req, res) => {
 // NEW: Handles updating an existing category (for PUT requests)
 export const updateCategory = async (req, res) => {
   try {
-    const { id } = req.params; // Get ID from URL parameter
+    const { id } = req.params;
     const {
       name,
       description,
@@ -140,56 +164,64 @@ export const updateCategory = async (req, res) => {
       translations,
     } = req.body;
 
-    let category = await Category.findById(id);
+    // Find category
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
     }
 
-    // Handle image update
+    let imageUrl = category.image;
+    let iconUrl = category.icon;
+
+    // ✅ Handle image update
     if (req.files?.image?.[0]?.path) {
-      // If a new image is uploaded and an old one exists, delete it first
-      if (category.image) {
-        try {
+      try {
+        // delete old image
+        if (category.image) {
           const oldPublicId = category.image.split("/").pop().split(".")[0];
           await destroyFromCloudinary(`categories/images/${oldPublicId}`);
-        } catch (e) {
-          console.warn("Old image deletion failed, continuing...", e.message);
         }
+
+        const uploadImg = await uploadToCloudinary(
+          req.files.image[0].path,
+          "categories/images"
+        );
+        imageUrl = uploadImg.secure_url;
+      } catch (err) {
+        console.warn("Error uploading image:", err.message);
       }
-      const uploadImg = await uploadToCloudinary(
-        req.files.image[0].path,
-        "categories/images"
-      );
-      category.image = uploadImg.secure_url;
     }
 
-    // Handle icon update
+    // ✅ Handle icon update
     if (req.files?.icon?.[0]?.path) {
-      // If a new icon is uploaded and an old one exists, delete it first
-      if (category.icon) {
-        try {
+      try {
+        if (category.icon) {
           const oldPublicId = category.icon.split("/").pop().split(".")[0];
           await destroyFromCloudinary(`categories/icons/${oldPublicId}`);
-        } catch (e) {
-          console.warn("Old icon deletion failed, continuing...", e.message);
         }
+
+        const uploadIcon = await uploadToCloudinary(
+          req.files.icon[0].path,
+          "categories/icons"
+        );
+        iconUrl = uploadIcon.secure_url;
+      } catch (err) {
+        console.warn("Error uploading icon:", err.message);
       }
-      // Corrected from req.files.image[0].path to req.files.icon[0].path
-      const uploadIcon = await uploadToCloudinary(
-        req.files.icon[0].path,
-        "categories/icons"
-      );
-      category.icon = uploadIcon.secure_url;
     }
 
-    // Update fields
+    // ✅ Update all editable fields safely
     if (name) {
       category.name = name;
       category.slug = slugify(name, { lower: true, strict: true });
     }
+
     category.description = description ?? category.description;
-    category.parentCategory = parentCategory ?? category.parentCategory;
-    category.seo = seo ?? category.seo;
+    category.parentCategory =
+      parentCategory && parentCategory !== "none" && parentCategory !== ""
+        ? parentCategory
+        : null;
+    category.seo = seo ? JSON.parse(JSON.stringify(seo)) : category.seo;
     category.isActive = isActive ?? category.isActive;
     category.isFeatured = isFeatured ?? category.isFeatured;
     category.showInMenu = showInMenu ?? category.showInMenu;
@@ -205,32 +237,55 @@ export const updateCategory = async (req, res) => {
       data: category,
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal Error", error: error.message });
+    console.error("Error updating category:", error.message);
+    return res.status(500).json({
+      message: "Internal Error",
+      error: error.message,
+    });
   }
 };
 
 // NEW: Handles partial updates for a category (for PATCH requests)
+// PATCH /api/v1/categories/:id
 export const partiallyUpdateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body; // Contains only the fields to update, e.g., { isActive: false }
 
+    if (!id) {
+      return res.status(400).json({ message: "Category ID is required." });
+    }
+
+    // Find category
     const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
     }
 
-    // Dynamically apply updates from the request body
-    Object.keys(updateData).forEach((key) => {
-      category[key] = updateData[key];
-    });
+    // Handle toggles or partial updates dynamically
+    const updateData = req.body;
 
-    // If the name is being updated, also update the slug
+    // Special handling for 'none' parentCategory
+    if (
+      updateData.parentCategory === "none" ||
+      updateData.parentCategory === ""
+    )
+      updateData.parentCategory = null;
+
+    // If name is updated, regenerate slug
     if (updateData.name) {
       category.slug = slugify(updateData.name, { lower: true, strict: true });
     }
 
+    // Apply updates safely
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value !== undefined && key !== "_id") {
+        category[key] = value;
+      }
+    }
+
+    // Track updater
     category.updatedBy = req.user._id;
+
     await category.save();
 
     return res.status(200).json({
@@ -238,6 +293,7 @@ export const partiallyUpdateCategory = async (req, res) => {
       data: category,
     });
   } catch (error) {
+    console.error("Error While Partially Update Category:", error.message);
     res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };

@@ -12,6 +12,24 @@ import {
 } from "./categoryApi";
 import { toast } from "sonner";
 
+function formatCategoryData(category: any) {
+  if (!category) return {};
+
+  return {
+    name: category.name || "",
+    description: category.description || "",
+    parentCategory:
+      category.parentCategory?._id || category.parentCategory || "none",
+    image: category.image || null,
+    isActive: category.isActive ?? false,
+    isFeatured: category.isFeatured ?? false,
+    showInMenu: category.showInMenu ?? false,
+    "seo[metaTitle]": category.seo?.metaTitle || "",
+    "seo[metaDescription]": category.seo?.metaDescription || "",
+    "seo[metaKeywords]": category.seo?.metaKeywords || "",
+  };
+}
+
 interface CategoryFormPageProps {
   mode?: "create" | "edit";
 }
@@ -104,7 +122,7 @@ export default function CategoryFormPage({
     <CrudForm
       title={mode === "edit" ? "Edit Category" : "Create Category"}
       fields={fields}
-      defaultValues={data?.data}
+      defaultValues={data ? formatCategoryData(data.data) : {}}
       mode={mode}
       onSubmit={handleSubmit}
       onCancel={() => navigate("/admin/category")}
