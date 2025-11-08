@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +59,11 @@ export function CrudForm({
   mode = "create",
 }: CrudFormProps) {
   const [values, setValues] = useState<Record<string, any>>(defaultValues);
+
+  // 🧩 FIX: keep values in sync with new defaultValues (important for edit mode)
+  React.useEffect(() => {
+    setValues(defaultValues);
+  }, [defaultValues]);
 
   const [
     { files, isDragging, errors },
