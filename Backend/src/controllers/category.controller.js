@@ -90,7 +90,10 @@ export const createCategory = async (req, res) => {
       name,
       slug,
       description,
-      parentCategory: parentCategory || null,
+      parentCategory:
+        parentCategory && parentCategory !== "none" && parentCategory !== ""
+          ? parentCategory
+          : null,
       seo,
       isActive,
       isFeatured,
@@ -101,8 +104,8 @@ export const createCategory = async (req, res) => {
       createdBy: req.user._id,
     });
 
-    // Link with parent if it exists
-    if (parentCategory) {
+    // Link with parent if it exists and valid
+    if (parentCategory && parentCategory !== "none") {
       const parent = await Category.findById(parentCategory);
       if (parent) {
         parent.subCategories.push(category._id);
@@ -115,6 +118,8 @@ export const createCategory = async (req, res) => {
       category,
     });
   } catch (error) {
+    console.error("Error While Create Category:", error.message);
+
     res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };

@@ -89,6 +89,11 @@ export function CrudForm({
     try {
       for (const key in values) {
         const val = values[key];
+
+        // Skip parentCategory if it's "none"
+        if (key === "parentCategory" && (val === "none" || val === ""))
+          continue;
+
         if (val !== undefined && val !== null) {
           if (typeof val === "object") {
             for (const subKey in val) {
@@ -209,14 +214,15 @@ export function CrudForm({
 
               if (field.type === "select") {
                 return (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div
+                    key={i}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
                     <div className="flex flex-col space-y-2">
                       <Label htmlFor={field.name}>{field.label}</Label>
                       <Select
                         value={values[field.name!] || ""}
-                        onValueChange={(val) =>
-                          handleChange(field.name!, val)
-                        }
+                        onValueChange={(val) => handleChange(field.name!, val)}
                       >
                         <SelectTrigger>
                           <SelectValue

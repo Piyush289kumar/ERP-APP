@@ -14,36 +14,53 @@ export const categoryApi = createApi({
         },
     }),
     tagTypes: ["Category"],
+
     endpoints: (builder) => ({
+        // ✅ Get paginated categories
         getCategories: builder.query({
-            query: ({ page = 1, limit = 20 }) => `categories?page=${page}&limit=${limit}`,
-            // transformErrorResponse : (response) => response.data
+            query: ({ page = 1, limit = 20 }) =>
+                `categories?page=${page}&limit=${limit}`,
             providesTags: ["Category"],
         }),
 
+        // ✅ Get category by ID
         getCategoryById: builder.query({
             query: (id) => `categories/${id}`,
             providesTags: ["Category"],
         }),
 
+        // ✅ Create category (multipart/form-data)
         createCategory: builder.mutation({
-            query: (body) => ({
+            query: (formData) => ({
                 url: "categories",
                 method: "POST",
-                body,
+                // 🚀 Don’t serialize FormData — send it directly
+                body: formData,
             }),
             invalidatesTags: ["Category"],
         }),
 
+        // ✅ Update category (multipart/form-data)
         updateCategory: builder.mutation({
-            query: ({ id, ...body }) => ({
+            query: ({ id, formData }) => ({
+                url: `categories/${id}`,
+                method: "PUT", // 🧠 Use PUT, your backend uses PUT for full update
+                body: formData,
+            }),
+            invalidatesTags: ["Category"],
+        }),
+
+        // ✅ Partial update (toggle only)
+        partiallyUpdateCategory: builder.mutation({
+            query: ({ id, data }) => ({
                 url: `categories/${id}`,
                 method: "PATCH",
-                body,
+                body: data, // small JSON patch like { isActive: false }
             }),
             invalidatesTags: ["Category"],
         }),
 
+        // ✅ Delete
         deleteCategory: builder.mutation({
             query: (id) => ({
                 url: `categories/${id}`,
@@ -59,5 +76,7 @@ export const {
     useGetCategoryByIdQuery,
     useCreateCategoryMutation,
     useUpdateCategoryMutation,
+    usePartiallyUpdateCategoryMutation,
     useDeleteCategoryMutation,
 } = categoryApi;
+
