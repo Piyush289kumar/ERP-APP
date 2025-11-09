@@ -1,5 +1,3 @@
-// app/components/crud/CategoryForm.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -22,7 +20,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   ImageIcon,
   UploadIcon,
@@ -51,7 +48,7 @@ export interface FieldConfig {
   sectionTitle?: string;
 }
 
-interface CategoryFormProps {
+interface CrudFormProps {
   title?: string;
   fields: FieldConfig[];
   defaultValues?: Record<string, any>;
@@ -59,9 +56,10 @@ interface CategoryFormProps {
   onCancel?: () => void;
   submitLabel?: string;
   mode?: "create" | "edit";
+  entityLabel?: string; // e.g., Category, Customer
 }
 
-export function CategoryForm({
+export function CrudForm({
   title,
   fields,
   defaultValues = {},
@@ -69,7 +67,8 @@ export function CategoryForm({
   onCancel,
   submitLabel = "Save",
   mode = "create",
-}: CategoryFormProps) {
+  entityLabel = "record",
+}: CrudFormProps) {
   const [values, setValues] = useState<Record<string, any>>(defaultValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -104,14 +103,11 @@ export function CategoryForm({
   ) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const formData = new FormData();
 
     try {
       for (const key in values) {
         const val = values[key];
-        if (key === "parentCategory" && (val === "none" || val === ""))
-          continue;
         if (val !== undefined && val !== null) {
           if (typeof val === "object" && !Array.isArray(val)) {
             for (const subKey in val) {
@@ -122,19 +118,17 @@ export function CategoryForm({
           }
         }
       }
-      // ✅ Handle image field logic
+
       if (files.length > 0 && files[0].file instanceof Blob) {
-        // new image selected
         formData.append("image", files[0].file as Blob, files[0].file.name);
       } else if (!values.image) {
-        // user removed image — mark for deletion
         formData.append("removeImage", "true");
       }
 
       await onSubmit(formData, actionType);
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong while submitting the form.");
+      toast.error(`Something went wrong while saving the ${entityLabel}.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -142,37 +136,32 @@ export function CategoryForm({
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
       {title && (
         <header>
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {mode === "edit"
-              ? "Update existing record information below."
-              : "Fill out the form to create a new record."}
+              ? `Update existing ${entityLabel} information below.`
+              : `Fill out the form to create a new ${entityLabel}.`}
           </p>
         </header>
       )}
 
-      {/* Form Layout */}
       <form id="crud-form" onSubmit={(e) => handleSubmit(e, "save")}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT SECTION */}
+          {/* LEFT */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Main Info */}
-            <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
+            <Card className="rounded-xl shadow-sm">
               <CardHeader>
                 <CardTitle>Main Information</CardTitle>
                 <CardDescription>
-                  Core details about this category
+                  Core details about this {entityLabel}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {fields
-                  .filter(
-                    (f) =>
-                      ["text", "textarea", "select"].includes(f.type) &&
-                      !f.name?.startsWith("seo[")
+                  .filter((f) =>
+                    ["text", "textarea", "select"].includes(f.type)
                   )
                   .map((field, i) => (
                     <div key={i} className="flex flex-col gap-2">
@@ -192,7 +181,6 @@ export function CategoryForm({
                         <Textarea
                           id={field.name}
                           placeholder={field.placeholder}
-                          rows={3}
                           value={values[field.name ?? ""] || ""}
                           onChange={(e) =>
                             handleChange(field.name!, e.target.value)
@@ -224,56 +212,13 @@ export function CategoryForm({
                   ))}
               </CardContent>
             </Card>
-
-            {/* SEO Settings */}
-            <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
-              <CardHeader>
-                <CardTitle>SEO Settings</CardTitle>
-                <CardDescription>
-                  Optimize your category for search engines
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {fields
-                  .filter((f) => f.name?.startsWith("seo["))
-                  .map((field, i) => (
-                    <div key={i} className="flex flex-col gap-2">
-                      <Label htmlFor={field.name}>{field.label}</Label>
-                      {field.type === "textarea" ? (
-                        <Textarea
-                          id={field.name}
-                          placeholder={field.placeholder}
-                          rows={3}
-                          value={values[field.name ?? ""] || ""}
-                          onChange={(e) =>
-                            handleChange(field.name!, e.target.value)
-                          }
-                        />
-                      ) : (
-                        <Input
-                          id={field.name}
-                          placeholder={field.placeholder}
-                          value={values[field.name ?? ""] || ""}
-                          onChange={(e) =>
-                            handleChange(field.name!, e.target.value)
-                          }
-                        />
-                      )}
-                    </div>
-                  ))}
-              </CardContent>
-            </Card>
           </div>
 
-          {/* RIGHT SECTION */}
+          {/* RIGHT */}
           <div className="space-y-6">
-            {/* Visibility */}
-            <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
+            <Card className="rounded-xl shadow-sm">
               <CardHeader>
                 <CardTitle>Visibility</CardTitle>
-                <CardDescription>
-                  Toggle category display options
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {fields
@@ -281,7 +226,7 @@ export function CategoryForm({
                   .map((field, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between border border-border rounded-lg p-3 hover:bg-accent/40 transition"
+                      className="flex items-center justify-between border rounded-lg p-3"
                     >
                       <Label htmlFor={field.name}>{field.label}</Label>
                       <Switch
@@ -296,14 +241,9 @@ export function CategoryForm({
               </CardContent>
             </Card>
 
-            {/* Image Upload */}
-            {/* Image Upload */}
-            <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
+            <Card className="rounded-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Category Image</CardTitle>
-                <CardDescription>
-                  Upload or change category thumbnail
-                </CardDescription>
+                <CardTitle>{entityLabel} Image</CardTitle>
               </CardHeader>
               <CardContent>
                 <div
@@ -311,7 +251,7 @@ export function CategoryForm({
                   onDragLeave={handleDragLeave}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed p-6 transition ${
+                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 ${
                     isDragging ? "bg-accent border-primary" : "border-border"
                   }`}
                 >
@@ -327,10 +267,7 @@ export function CategoryForm({
                         type="button"
                         className="absolute top-3 right-3 bg-black/70 text-white rounded-full p-2"
                         onClick={() => {
-                          // ✅ Fix: clear both uploaded & existing image
-                          if (files.length > 0) {
-                            removeFile(files[0]?.id);
-                          }
+                          if (files.length > 0) removeFile(files[0]?.id);
                           setValues((prev) => ({ ...prev, image: null }));
                         }}
                       >
@@ -339,29 +276,21 @@ export function CategoryForm({
                     </div>
                   ) : (
                     <div className="flex flex-col items-center text-center">
-                      <div className="flex items-center justify-center w-14 h-14 rounded-full border border-muted-foreground mb-3">
-                        <ImageIcon className="w-5 h-5 opacity-60" />
-                      </div>
-                      <p className="text-sm font-medium">
-                        Drop your image here or
-                      </p>
+                      <ImageIcon className="h-8 w-8 mb-2 opacity-70" />
+                      <p className="text-sm">Drop your image here or</p>
                       <Button
                         variant="outline"
-                        className="mt-2"
                         type="button"
                         onClick={openFileDialog}
+                        className="mt-2"
                       >
                         <UploadIcon className="h-4 w-4 mr-2" /> Select Image
                       </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Supported: PNG, JPG, WEBP, GIF — up to 2MB
-                      </p>
                     </div>
                   )}
                 </div>
-
                 {errors.length > 0 && (
-                  <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                  <div className="text-xs text-destructive mt-1 flex gap-1 items-center">
                     <AlertCircleIcon className="h-3 w-3" />
                     <span>{errors[0]}</span>
                   </div>
@@ -371,68 +300,59 @@ export function CategoryForm({
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        {/* <Separator className="my-8" /> */}
-        <div className="lg:col-span-3 flex justify-start border-border pt-6">
-          <div className="flex gap-3">
-            {mode === "edit" ? (
+        {/* Footer */}
+        <div className="flex gap-3 pt-6">
+          {mode === "edit" ? (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          ) : (
+            <>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-primary text-white hover:opacity-90"
+                onClick={(e) => handleSubmit(e, "create")}
               >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                  </>
+                ) : (
+                  "Create"
                 )}
-                {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
-            ) : (
-              <>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-lg bg-primary text-white hover:opacity-90"
-                  onClick={(e) => handleSubmit(e, "create")}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Creating...
-                    </>
-                  ) : (
-                    "Create"
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={(e) => handleSubmit(e, "create_another")}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Creating...
-                    </>
-                  ) : (
-                    "Create & Create Another"
-                  )}
-                </Button>
-              </>
-            )}
-
-            {onCancel && (
               <Button
                 variant="outline"
                 type="button"
                 disabled={isSubmitting}
-                onClick={onCancel}
-                className="rounded-lg"
+                onClick={(e) => handleSubmit(e, "create_another")}
               >
-                Cancel
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                  </>
+                ) : (
+                  "Create & Create Another"
+                )}
               </Button>
-            )}
-          </div>
+            </>
+          )}
+          {onCancel && (
+            <Button
+              variant="outline"
+              type="button"
+              disabled={isSubmitting}
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       </form>
     </div>

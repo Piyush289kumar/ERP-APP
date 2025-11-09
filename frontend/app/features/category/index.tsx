@@ -1,8 +1,26 @@
 // app/features/category/index.tsx
-
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useNavigate } from "react-router";
+import {
+  useGetCategoriesQuery,
+  useDeleteCategoryMutation,
+  usePartiallyUpdateCategoryMutation,
+} from "./data/categoryApi";
+import { DataTable, BulkActions } from "@/components/crud";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  ArrowUpDown,
+  CirclePlus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,112 +29,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
-import {
-  useGetCategoriesQuery,
-  useDeleteCategoryMutation,
-  useUpdateCategoryMutation,
-  usePartiallyUpdateCategoryMutation,
-} from "~/features/category/data/categoryApi";
-import { CategoryDataTable } from "~/features/category/components";
-import React from "react";
-import { type ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  CirclePlus,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from "lucide-react";
-import { Checkbox } from "~/components/ui/checkbox";
-import { DataTableBulkActions } from "./components/data-table-bulk-actions";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [tableInstance, setTableInstance] = React.useState<any>(null);
+
   const { data, isLoading } = useGetCategoriesQuery({ page, limit });
+  const [deleteCategory] = useDeleteCategoryMutation();
+  const [partiallyUpdateCategory] = usePartiallyUpdateCategoryMutation();
 
   const categoryData = data?.data ?? [];
   const totalPages = data?.pagination?.totalPages ?? 1;
 
-  const [updateCategory] = useUpdateCategoryMutation();
-  const [partiallyUpdateCategory] = usePartiallyUpdateCategoryMutation();
-  const [deleteCategory] = useDeleteCategoryMutation();
-
-  const handlePageSizeChange = (newSize: number) => {
-    setLimit(newSize);
-    setPage(1);
+  const handleDelete = async (item: any) => {
+    await toast.promise(deleteCategory(item._id).unwrap(), {
+      loading: `Deleting ${item.name}...`,
+      success: `Category "${item.name}" deleted successfully!`,
+      error: "Failed to delete category.",
+    });
   };
 
   const handleToggleActive = async (category: any) => {
     try {
       await partiallyUpdateCategory({
         id: category._id,
-        data: { isActive: !category.isActive }, // ✅ send small JSON
+        data: { isActive: !category.isActive },
       }).unwrap();
-
       toast.success(
         `Category "${category.name}" has been ${
           category.isActive ? "deactivated" : "activated"
         }.`
       );
-    } catch (error) {
+    } catch {
       toast.error("Failed to update category status.");
     }
   };
 
-  // ✅ Toggle Featured
-  const handleToggleFeatured = async (category: any) => {
-    try {
-      await partiallyUpdateCategory({
-        id: category._id,
-        data: { isFeatured: !category.isFeatured },
-      }).unwrap();
-
-      toast.success(
-        `Category "${category.name}" has been ${
-          category.isFeatured ? "unfeatured" : "marked as featured"
-        }.`
-      );
-    } catch {
-      toast.error("Failed to update featured status.");
-    }
-  };
-
-  // ✅ Toggle Show In Menu
-  const handleToggleShowInMenu = async (category: any) => {
-    try {
-      await partiallyUpdateCategory({
-        id: category._id,
-        data: { showInMenu: !category.showInMenu },
-      }).unwrap();
-
-      toast.success(
-        `Category "${category.name}" will ${
-          category.showInMenu ? "no longer" : "now"
-        } appear in the menu.`
-      );
-    } catch {
-      toast.error("Failed to update menu visibility.");
-    }
-  };
-
-  // The function to perform the delete, passed to CrudDataTable
-  const handleDelete = async (item: any) => {
-    try {
-      await deleteCategory(item._id).unwrap();
-      toast.success("Category deleted successfully");
-    } catch {
-      toast.error("Failed to delete category");
-    }
-  };
-
   const columns: ColumnDef<any>[] = [
-    // ... other columns (select, image, name, etc.)
     {
       id: "select",
       header: ({ table }) => (
@@ -136,8 +87,6 @@ export default function CategoryPage() {
           aria-label="Select row"
         />
       ),
-      enableSorting: false,
-      enableHiding: false,
     },
     {
       accessorKey: "image",
@@ -149,13 +98,11 @@ export default function CategoryPage() {
           className="h-10 w-10 rounded-full object-cover"
         />
       ),
-      enableSorting: false,
     },
     {
       accessorKey: "name",
       header: ({ column }) => (
         <Button
-          className="cursor-pointer"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -165,99 +112,20 @@ export default function CategoryPage() {
       ),
     },
     {
-      // Updated the "Active" column with a sortable header
       accessorKey: "isActive",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="cursor-pointer"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Active
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: "Active",
       cell: ({ row }) => (
         <Switch
-          className="cursor-pointer"
           checked={row.original.isActive}
           onCheckedChange={() => handleToggleActive(row.original)}
-          aria-label="Toggle category status"
         />
       ),
-    },
-    {
-      accessorKey: "isFeatured",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="cursor-pointer"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Featured
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <Switch
-          className="cursor-pointer"
-          checked={row.original.isFeatured}
-          onCheckedChange={() => handleToggleFeatured(row.original)}
-          aria-label="Toggle featured status"
-        />
-      ),
-    },
-    {
-      accessorKey: "showInMenu",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="cursor-pointer"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Show In Menu
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <Switch
-          className="cursor-pointer"
-          checked={row.original.showInMenu}
-          onCheckedChange={() => handleToggleShowInMenu(row.original)}
-          aria-label="Toggle menu visibility"
-        />
-      ),
-    },
-
-    {
-      accessorKey: "createdBy.name",
-      header: ({ column }) => (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Created By
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => row.original.createdBy?.name || "N/A",
     },
     {
       accessorKey: "createdAt",
-      header: ({ column }) => (
-        <Button
-          className="cursor-pointer"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: "Created At",
       cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
     },
-
     {
       id: "actions",
       header: "Actions",
@@ -266,8 +134,7 @@ export default function CategoryPage() {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
-                <span className="sr-only">Open menu</span>
+              <Button variant="ghost" className="h-8 w-8 p-0">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -277,8 +144,7 @@ export default function CategoryPage() {
               <DropdownMenuItem
                 onClick={() => navigate(`/admin/category/edit/${category._id}`)}
               >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
+                <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
@@ -286,8 +152,7 @@ export default function CategoryPage() {
                 }
                 className="text-red-600 focus:text-red-600"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -305,22 +170,25 @@ export default function CategoryPage() {
         </Button>
       </div>
 
-      {/* ✅ Bulk Actions Toolbar */}
-      {tableInstance && <DataTableBulkActions table={tableInstance} />}
+      {tableInstance && (
+        <BulkActions table={tableInstance} entityName="category" />
+      )}
 
-      <CategoryDataTable
-        data={categoryData}
+      <DataTable
         columns={columns}
+        data={categoryData}
         isLoading={isLoading}
         searchKey="name"
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(newPage) => setPage(newPage)}
-        pageSize={limit}
-        onPageSizeChange={handlePageSizeChange}
-        onDelete={handleDelete} // Pass the delete handler
-        deleteItemNameKey="name" // Specify the key for the item's name
-        onTableReady={setTableInstance} // ✅ get instance here
+        pagination={{
+          page,
+          totalPages,
+          onPageChange: setPage,
+          pageSize: limit,
+          onPageSizeChange: setLimit,
+        }}
+        onDelete={handleDelete}
+        deleteItemNameKey="name"
+        onTableReady={setTableInstance}
       />
     </div>
   );

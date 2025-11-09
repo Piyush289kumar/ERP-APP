@@ -1,4 +1,4 @@
-// app/components/crud/category-data-table.tsx
+// app/components/crud/DataTable.tsx
 
 "use client";
 import * as React from "react";
@@ -13,12 +13,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ChevronDown,
-  GitCompare,
-  Loader2,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { GitCompare, Loader2, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,8 +31,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CategoryPagination } from "./category-pagination";
-import { RowsPerPageDropdownMenu } from "./row-per-page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,39 +40,38 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../../../components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { RowsPerPageDropdownMenu } from "~/components/crud/RowsPerPageMenu";
+import { PaginationControls } from "~/components/crud/Pagination";
 
-// Define props for the generic data table
-interface CategoryDataTableProps<TData, TValue> {
+interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading?: boolean;
   searchKey: string;
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void; // Define the function signature
-  pageSize: number;
-  onPageSizeChange: (size: number) => void;
+  pagination: {
+    page: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+    pageSize: number;
+    onPageSizeChange: (size: number) => void;
+  };
   onDelete?: (item: TData) => Promise<void>;
   deleteItemNameKey?: keyof TData;
   onTableReady?: (table: any) => void;
 }
 
-export function CategoryDataTable<TData, TValue>({
+export function DataTable<TData, TValue>({
   columns,
   data,
   isLoading = false,
   searchKey,
-  page,
-  totalPages,
-  onPageChange,
-  pageSize,
-  onPageSizeChange,
+  pagination,
   onDelete,
   deleteItemNameKey = "record" as keyof TData,
   onTableReady,
-}: CategoryDataTableProps<TData, TValue>) {
+}: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -87,31 +79,21 @@ export function CategoryDataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
-  // State for delete confirmation dialog
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<TData | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
-  // Function to open the dialog, will be passed via meta
   const openDeleteDialog = (item: TData) => {
-    if (!onDelete) return; // Don't open if no handler is provided
+    if (!onDelete) return;
     setItemToDelete(item);
     setIsDeleteDialogOpen(true);
   };
 
-  const [isDeleting, setIsDeleting] = React.useState(false); // ✅ Add loading state
-
-  // ✅ Function to confirm and execute deletion with loading toast
   const handleConfirmDelete = async () => {
     if (!itemToDelete || !onDelete) return;
+    const name = (itemToDelete as any)[deleteItemNameKey] || "this item";
+    setIsDeleting(true);
 
-    // Capture category name for better UX
-    const name = (itemToDelete as any)[deleteItemNameKey] || "this category";
-
-    setIsDeleting(true); // start local spinner
-
-    // Use sonner.promise for better feedback
     await toast.promise(onDelete(itemToDelete), {
       loading: `Deleting ${name}...`,
       success: `${name} deleted successfully!`,
@@ -127,7 +109,7 @@ export function CategoryDataTable<TData, TValue>({
     data,
     columns,
     manualPagination: true,
-    pageCount: totalPages,
+    pageCount: pagination.totalPages,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -135,30 +117,23 @@ export function CategoryDataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-    meta: {
-      openDeleteDialog,
-    },
+    state: { sorting, columnFilters, columnVisibility, rowSelection },
+    meta: { openDeleteDialog },
   });
 
-  // ✅ Notify parent once table is ready
   React.useEffect(() => {
     if (onTableReady) onTableReady(table);
   }, [table, onTableReady]);
 
   return (
     <div className="w-full">
+      {/* 🔍 Search + Column Toggle */}
       <div className="flex items-center py-4">
         <Input
           placeholder={`Filter by ${searchKey}...`}
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn(searchKey)?.setFilterValue(event.target.value)
+          onChange={(e) =>
+            table.getColumn(searchKey)?.setFilterValue(e.target.value)
           }
           className="max-w-xs"
         />
@@ -171,37 +146,32 @@ export function CategoryDataTable<TData, TValue>({
           <DropdownMenuContent align="end">
             {table
               .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+              .filter((col) => col.getCanHide())
+              .map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col.id}
+                  className="capitalize"
+                  checked={col.getIsVisible()}
+                  onCheckedChange={(value) => col.toggleVisibility(!!value)}
+                >
+                  {col.id}
+                </DropdownMenuCheckboxItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* 📋 Table */}
       <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id}>
+                {hg.headers.map((h) => (
+                  <TableHead key={h.id}>
+                    {h.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -209,18 +179,16 @@ export function CategoryDataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              // Loading state with skeletons
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {columns.map((column, j) => (
+                  {columns.map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-6 w-full" />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
-            ) : table.getRowModel().rows?.length ? (
-              // Data rows
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -237,7 +205,6 @@ export function CategoryDataTable<TData, TValue>({
                 </TableRow>
               ))
             ) : (
-              // No results state
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
@@ -250,79 +217,58 @@ export function CategoryDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+
+      {/* 📄 Pagination */}
       <div className="flex items-center justify-between py-4">
-        {/* Left: Selected row count */}
         <div className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredRowModel().rows.length} selected.
         </div>
-        {/* Center: Rows per page dropdown */}
         <div className="flex justify-center">
-          {/* 2. Pass the props down */}
           <RowsPerPageDropdownMenu
-            pageSize={pageSize}
-            onPageSizeChange={onPageSizeChange}
+            pageSize={pagination.pageSize}
+            onPageSizeChange={pagination.onPageSizeChange}
           />
         </div>
-        {/* Right: Pagination controls */}
         <div className="flex justify-end">
-          <CategoryPagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            pageSize={pageSize}
-            onPageSizeChange={onPageSizeChange}
+          <PaginationControls
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={pagination.onPageChange}
+            pageSize={pagination.pageSize}
+            onPageSizeChange={pagination.onPageSizeChange}
           />
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* 🗑️ Delete Dialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
-        onOpenChange={(open) => {
-          if (!open && !isDeleting) {
-            // prevent closing while deleting
-            setItemToDelete(null);
-          }
-          setIsDeleteDialogOpen(open);
-        }}
+        onOpenChange={(open) => !isDeleting && setIsDeleteDialogOpen(open)}
       >
         <AlertDialogContent>
           <AlertDialogHeader className="items-center">
             <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
               <TriangleAlertIcon className="text-destructive size-6" />
             </div>
-
             <AlertDialogTitle>
-              Delete this category:{" "}
+              Delete{" "}
               <span className="font-semibold text-destructive">
-                {itemToDelete
-                  ? ((itemToDelete as any)[deleteItemNameKey] ?? "Unknown")
-                  : "Unknown"}
+                {(itemToDelete as any)?.[deleteItemNameKey] ?? "Unknown"}
               </span>
               ?
             </AlertDialogTitle>
-
             <AlertDialogDescription className="text-center text-muted-foreground">
-              You are about to delete this category permanently.
-              <br />
-              This action <strong>cannot</strong> be undone.
+              You are about to delete this item permanently. This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting} // ✅ prevent cancel during deletion
-              onClick={() => setItemToDelete(null)}
-              className="cursor-pointer"
-            >
-              Cancel
-            </AlertDialogCancel>
-
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={isDeleting}
               onClick={handleConfirmDelete}
-              className="bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive text-white cursor-pointer min-w-[120px] justify-center"
+              className="bg-destructive hover:bg-destructive/90 text-white min-w-[120px]"
             >
               {isDeleting ? (
                 <>

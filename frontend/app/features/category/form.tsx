@@ -1,135 +1,62 @@
-// app/features/category/CategoryFormPage.tsx
+// app/features/category/form.tsx
+
 "use client";
+
+import { CrudForm, type FieldConfig } from "@/components/forms/CrudForm";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  CategoryForm,
-  type FieldConfig,
-} from "~/features/category/components/category-form"; // ✅ Import FieldConfig type
-import { useParams, useNavigate } from "react-router";
-import {
-  useGetCategoryByIdQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
-  useGetCategoriesQuery,
 } from "./data/categoryApi";
 import { toast } from "sonner";
-function formatCategoryData(category: any) {
-  if (!category) return {};
-  return {
-    name: category.name || "",
-    description: category.description || "",
-    parentCategory:
-      category.parentCategory?._id || category.parentCategory || "none",
-    image: category.image || null,
-    isActive: category.isActive ?? false,
-    isFeatured: category.isFeatured ?? false,
-    showInMenu: category.showInMenu ?? false,
-    "seo[metaTitle]": category.seo?.metaTitle || "",
-    "seo[metaDescription]": category.seo?.metaDescription || "",
-    "seo[metaKeywords]": category.seo?.metaKeywords || "",
-  };
-}
-interface CategoryFormPageProps {
-  mode?: "create" | "edit";
-}
-export default function CategoryFormPage({
-  mode: forcedMode,
-}: CategoryFormPageProps) {
-  const { id } = useParams();
+
+export default function CategoryForm({ category, isEdit = false }: any) {
   const navigate = useNavigate();
-  const mode = forcedMode ?? (id ? "edit" : "create");
-  // queries & mutations
-  const { data } = useGetCategoryByIdQuery(id!, { skip: !id });
-  const { data: categories } = useGetCategoriesQuery({ page: 1, limit: 100 });
+  const params = useParams();
+  const id = params?.id;
+
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
-  // ✅ Explicitly type your field configuration
+
   const fields: FieldConfig[] = [
-    {
-      name: "name",
-      label: "Category Name",
-      type: "text",
-      placeholder: "Enter category name",
-      required: true,
-    },
+    { name: "name", label: "Category Name", type: "text", required: true },
     {
       name: "description",
       label: "Description",
       type: "textarea",
-      placeholder: "Enter category description",
+      placeholder: "Describe this category",
     },
-    {
-      name: "parentCategory",
-      label: "Parent Category",
-      type: "select",
-      placeholder: "Select parent category",
-      options: [
-        { value: "none", label: "None" },
-        ...(categories?.data?.map((c: any) => ({
-          value: c._id,
-          label: c.name,
-        })) ?? []),
-      ],
-    },
-    { type: "image", name: "image", label: "Category Image" },
-    { type: "section", sectionTitle: "Visibility" },
     { name: "isActive", label: "Active", type: "boolean" },
     { name: "isFeatured", label: "Featured", type: "boolean" },
     { name: "showInMenu", label: "Show in Menu", type: "boolean" },
-    { type: "section", sectionTitle: "SEO Settings" },
-    {
-      name: "seo[metaTitle]",
-      label: "Meta Title",
-      type: "text",
-      placeholder: "SEO title for this category",
-    },
-    {
-      name: "seo[metaDescription]",
-      label: "Meta Description",
-      type: "textarea",
-      placeholder: "SEO description",
-    },
-    {
-      name: "seo[metaKeywords]",
-      label: "Meta Keywords",
-      type: "text",
-      placeholder: "e.g. electronics, gadgets",
-    },
+    { name: "image", label: "Category Image", type: "image" },
   ];
-  // handle create/update
+
   const handleSubmit = async (formData: FormData, actionType?: string) => {
     try {
-      if (mode === "edit") {
-        await updateCategory({ id, formData }).unwrap();
+      if (isEdit || id) {
+        await updateCategory({ id: id || category._id, data: formData }).unwrap();
         toast.success("Category updated successfully!");
-        navigate("/admin/category");
       } else {
         await createCategory(formData).unwrap();
         toast.success("Category created successfully!");
-        if (actionType === "create_another") {
-          // Stay on page and rest the form
-          const formEl = document.getElementById(
-            "crud-form"
-          ) as HTMLFormElement;
-          if (formEl) formEl.reset();
-          toast.info("Ready to create another category!");
-        } else {
-          // Normal create -> go back to list
-          navigate("/admin/category");
-        }
+        if (actionType === "create_another") return;
       }
-    } catch (error) {
-      toast.error("Something went wrong while saving the category.");
+      navigate("/admin/category");
+    } catch {
+      toast.error("Failed to save category.");
     }
   };
+
   return (
-    <CategoryForm
-      title={mode === "edit" ? "Edit Category" : "Create Category"}
+    <CrudForm
+      title={isEdit ? "Edit Category" : "Create Category"}
       fields={fields}
-      defaultValues={data ? formatCategoryData(data.data) : {}}
-      mode={mode}
+      defaultValues={category || {}}
+      mode={isEdit ? "edit" : "create"}
+      entityLabel="Category"
       onSubmit={handleSubmit}
       onCancel={() => navigate("/admin/category")}
-      submitLabel={mode === "edit" ? "Update Category" : "Create Category"}
     />
   );
 }

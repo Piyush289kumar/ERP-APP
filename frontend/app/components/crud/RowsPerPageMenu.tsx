@@ -1,4 +1,5 @@
-// app/components/crud/row-per-page.tsx
+// app/components/crud/RowsPerPageMenu.tsx
+
 "use client";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArchiveIcon, ChevronDown, MailCheckIcon } from "lucide-react";
-import { ButtonGroup } from "../../../components/ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 // 1. Define props to make the component interactive
 interface RowsPerPageDropdownMenuProps {
@@ -25,8 +26,12 @@ export function RowsPerPageDropdownMenu({
       <Button variant="outline">Per page</Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" aria-label="More Options"
-          className="px-8">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="More Options"
+            className="px-8"
+          >
             {pageSize}
             <ChevronDown />
           </Button>
