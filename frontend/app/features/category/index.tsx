@@ -313,7 +313,7 @@ export default function CategoryPage() {
         pageSize={limit}
         onPageSizeChange={handlePageSizeChange}
         onDelete={handleDelete} // Pass the delete handler
-        deleteItemNameKey="Record" // Specify the key for the item's name
+        deleteItemNameKey="name" // Specify the key for the item's name
       />
     </div>
   );

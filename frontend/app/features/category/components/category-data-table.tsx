@@ -1,4 +1,4 @@
-// app/components/crud/CrudTable.tsx
+// app/components/crud/category-data-table.tsx
 
 "use client";
 import * as React from "react";
@@ -13,7 +13,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, GitCompare, TriangleAlertIcon } from "lucide-react";
+import { ChevronDown, GitCompare, Loader2, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog";
+import { toast } from "sonner";
 
 // Define props for the generic data table
 interface CategoryDataTableProps<TData, TValue> {
@@ -92,13 +93,19 @@ export function CategoryDataTable<TData, TValue>({
     setIsDeleteDialogOpen(true);
   };
 
+  const [isDeleting, setIsDeleting] = React.useState(false); // ✅ Add loading state
+
   // Function to confirm and execute deletion
   const handleConfirmDelete = async () => {
     if (!itemToDelete || !onDelete) return;
     try {
+      setIsDeleting(true); // ✅ Start loading
       await onDelete(itemToDelete);
+      toast?.success?.("Item deleted successfully!");
+    } catch (error) {
+      toast?.error?.("Failed to delete the item.");
     } finally {
-      // Always close the dialog
+      setIsDeleting(false); // ✅ Stop loading
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
     }
@@ -138,7 +145,7 @@ export function CategoryDataTable<TData, TValue>({
           onChange={(event) =>
             table.getColumn(searchKey)?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-xs"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -254,40 +261,71 @@ export function CategoryDataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+    
+    
+     {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            // prevent closing while deleting
+            setItemToDelete(null);
+          }
+          setIsDeleteDialogOpen(open);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader className="items-center">
             <div className="bg-destructive/10 mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
               <TriangleAlertIcon className="text-destructive size-6" />
             </div>
+
             <AlertDialogTitle>
-              Delete{" "}
-              {itemToDelete ? (itemToDelete as any)[deleteItemNameKey] : "Item"}
+              Delete this category:{" "}
+              <span className="font-semibold text-destructive">
+                {itemToDelete
+                  ? ((itemToDelete as any)[deleteItemNameKey] ?? "Unknown")
+                  : "Unknown"}
+              </span>
+              ?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              Are you sure you would like to do this?
+
+            <AlertDialogDescription className="text-center text-muted-foreground">
+              You are about to delete this category permanently.
+              <br />
+              This action <strong>cannot</strong> be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel
+              disabled={isDeleting} // ✅ prevent cancel during deletion
               onClick={() => setItemToDelete(null)}
               className="cursor-pointer"
             >
               Cancel
             </AlertDialogCancel>
+
             <AlertDialogAction
+              disabled={isDeleting}
               onClick={handleConfirmDelete}
-              className="bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive text-white cursor-pointer"
+              className="bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive text-white cursor-pointer min-w-[120px] justify-center"
             >
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+
+
     </div>
   );
 }
