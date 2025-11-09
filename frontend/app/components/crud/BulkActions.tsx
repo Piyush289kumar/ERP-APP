@@ -1,6 +1,7 @@
 // app/components/crud/BulkAction.tsx
 
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { type Table } from "@tanstack/react-table";
 import { Trash2, X } from "lucide-react";
@@ -11,7 +12,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ✅ Import all multi-delete dialogs
 import { CategoryMultiDeleteDialog } from "~/features/category/components/category-multi-delete-dialog";
+import { ServiceMultiDeleteDialog } from "~/features/service/components/service-multi-delete-dialog";
+// You can add more in the future like:
+// import { UserMultiDeleteDialog } from "~/features/user/components/user-multi-delete-dialog";
 
 export function BulkActions<TData>({
   table,
@@ -23,6 +29,42 @@ export function BulkActions<TData>({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
+
+  // ✅ Dynamically choose the correct delete dialog
+  const renderDeleteDialog = () => {
+    switch (entityName?.toLowerCase()) {
+      case "service":
+        return (
+          <ServiceMultiDeleteDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+            table={table}
+          />
+        );
+
+      case "category":
+        return (
+          <CategoryMultiDeleteDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+            table={table}
+          />
+        );
+
+      // Future example:
+      // case "user":
+      //   return (
+      //     <UserMultiDeleteDialog
+      //       open={showDeleteConfirm}
+      //       onOpenChange={setShowDeleteConfirm}
+      //       table={table}
+      //     />
+      //   );
+
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     const rerender = () => {
@@ -45,7 +87,8 @@ export function BulkActions<TData>({
             exit={{ opacity: 0, y: 80 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
             className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center justify-between
-            rounded-xl bg-white/90 shadow-lg border border-gray-200 px-4 py-3 backdrop-blur-md dark:bg-gray-900/80 w-[25%] max-w-2xl"
+              rounded-xl bg-white/90 shadow-lg border border-gray-200 px-4 py-3 backdrop-blur-md 
+              dark:bg-gray-900/80 w-[25%] max-w-2xl"
           >
             <div className="flex items-center gap-3">
               <p className="text-sm font-medium">
@@ -53,7 +96,9 @@ export function BulkActions<TData>({
                 {selectedCount > 1 ? "s" : ""} selected
               </p>
             </div>
+
             <div className="flex items-center gap-3">
+              {/* 🗑️ Bulk Delete */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -68,6 +113,8 @@ export function BulkActions<TData>({
                   <p>Bulk Delete</p>
                 </TooltipContent>
               </Tooltip>
+
+              {/* ❌ Clear Selection */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -87,12 +134,8 @@ export function BulkActions<TData>({
         )}
       </AnimatePresence>
 
-      {/* Keep using your existing MultiDeleteDialog */}
-      <CategoryMultiDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        table={table}
-      />
+      {/* 🧩 Dynamically rendered Delete Dialog */}
+      {renderDeleteDialog()}
     </>
   );
 }

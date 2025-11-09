@@ -128,6 +128,7 @@ export const createService = async (req, res) => {
       data: service,
     });
   } catch (error) {
+    console.error("Error while creating service:", error.message);
     res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };

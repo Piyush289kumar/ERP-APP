@@ -1,6 +1,6 @@
 // app/features/service/create-wrapper.tsx
-import CategoryForm from "~/features/category/components/form";
+import ServiceForm from "~/features/service/components/form";
 
 export default function CreateCategory() {
-  return <CategoryForm mode="create" />;
+  return <ServiceForm mode="create" />;
 }

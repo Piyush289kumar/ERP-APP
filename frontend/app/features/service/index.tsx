@@ -30,43 +30,47 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function CategoryPage() {
+export default function ServicePage() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [tableInstance, setTableInstance] = React.useState<any>(null);
 
+  // ✅ Fetch all services
   const { data, isLoading } = useGetServicesQuery({ page, limit });
-  const [partiallyUpdateCategory] = usePartiallyUpdateServiceMutation();
-  const [deleteCategory] = useDeleteServiceMutation();
+  const [toggleServiceStatus] = usePartiallyUpdateServiceMutation();
+  const [deleteService] = useDeleteServiceMutation();
 
-  const categoryData = data?.data ?? [];
+  const serviceData = data?.data ?? [];
   const totalPages = data?.pagination?.totalPages ?? 1;
 
+  // ✅ Delete handler
   const handleDelete = async (item: any) => {
-    await toast.promise(deleteCategory(item._id).unwrap(), {
-      loading: `Deleting ${item.name}...`,
-      success: `Category "${item.name}" deleted successfully!`,
-      error: "Failed to delete category.",
+    await toast.promise(deleteService(item._id).unwrap(), {
+      loading: `Deleting ${item.title}...`,
+      success: `Service "${item.title}" deleted successfully!`,
+      error: "Failed to delete service.",
     });
   };
 
-  const handleToggleActive = async (category: any) => {
+  // ✅ Toggle active status
+  const handleToggleActive = async (service: any) => {
     try {
-      await partiallyUpdateCategory({
-        id: category._id,
-        data: { isActive: !category.isActive },
+      await toggleServiceStatus({
+        id: service._id,
+        data: { isActive: !service.isActive },
       }).unwrap();
       toast.success(
-        `Category "${category.name}" has been ${
-          category.isActive ? "deactivated" : "activated"
+        `Service "${service.title}" has been ${
+          service.isActive ? "deactivated" : "activated"
         }.`
       );
     } catch {
-      toast.error("Failed to update category status.");
+      toast.error("Failed to update service status.");
     }
   };
 
+  // ✅ Define table columns
   const columns: ColumnDef<any>[] = [
     {
       id: "select",
@@ -91,13 +95,18 @@ export default function CategoryPage() {
     {
       accessorKey: "thumbnail",
       header: "Thumbnail",
-      cell: ({ row }) => (
-        <img
-          src={row.original.image}
-          alt={row.original.name}
-          className="h-10 w-10 rounded-full object-cover"
-        />
-      ),
+      cell: ({ row }) =>
+        row.original.thumbnail ? (
+          <img
+            src={row.original.thumbnail}
+            alt={row.original.title}
+            className="h-10 w-10 rounded object-cover border"
+          />
+        ) : (
+          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
+            N/A
+          </div>
+        ),
     },
     {
       accessorKey: "title",
@@ -106,9 +115,14 @@ export default function CategoryPage() {
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          Title
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium text-foreground">
+          {row.original.title}
+        </span>
       ),
     },
     {
@@ -118,9 +132,14 @@ export default function CategoryPage() {
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          Sub Heading
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.subHeading || "-"}
+        </span>
       ),
     },
     {
@@ -136,13 +155,14 @@ export default function CategoryPage() {
     {
       accessorKey: "createdAt",
       header: "Created At",
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
+      cell: ({ row }) =>
+        new Date(row.original.createdAt).toLocaleDateString("en-IN"),
     },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row, table }) => {
-        const category = row.original;
+        const service = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -154,13 +174,13 @@ export default function CategoryPage() {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => navigate(`/admin/category/edit/${category._id}`)}
+                onClick={() => navigate(`/admin/service/edit/${service._id}`)}
               >
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  (table.options.meta as any)?.openDeleteDialog(category)
+                  (table.options.meta as any)?.openDeleteDialog(service)
                 }
                 className="text-red-600 focus:text-red-600"
               >
@@ -175,20 +195,21 @@ export default function CategoryPage() {
 
   return (
     <div className="p-0 space-y-3">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Services</h1>
-        <Button onClick={() => navigate("/admin/category/create")}>
-          <CirclePlus /> Add Service
+        <Button onClick={() => navigate("/admin/service/create")}>
+          <CirclePlus className="mr-2 h-4 w-4" /> Add Service
         </Button>
       </div>
 
-      {tableInstance && (
-        <BulkActions table={tableInstance} entityName="category" />
-      )}
+      {/* BULK ACTIONS */}
+      {tableInstance && <BulkActions table={tableInstance} entityName="service" />}
 
+      {/* DATA TABLE */}
       <DataTable
         columns={columns}
-        data={categoryData}
+        data={serviceData}
         isLoading={isLoading}
         searchKey="title"
         pagination={{
