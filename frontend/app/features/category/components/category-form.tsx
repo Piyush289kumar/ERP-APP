@@ -23,7 +23,13 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ImageIcon, UploadIcon, XIcon, AlertCircleIcon, Loader2 } from "lucide-react";
+import {
+  ImageIcon,
+  UploadIcon,
+  XIcon,
+  AlertCircleIcon,
+  Loader2,
+} from "lucide-react";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
 
@@ -104,7 +110,8 @@ export function CategoryForm({
     try {
       for (const key in values) {
         const val = values[key];
-        if (key === "parentCategory" && (val === "none" || val === "")) continue;
+        if (key === "parentCategory" && (val === "none" || val === ""))
+          continue;
         if (val !== undefined && val !== null) {
           if (typeof val === "object" && !Array.isArray(val)) {
             for (const subKey in val) {
@@ -115,9 +122,13 @@ export function CategoryForm({
           }
         }
       }
-
+      // ✅ Handle image field logic
       if (files.length > 0 && files[0].file instanceof Blob) {
+        // new image selected
         formData.append("image", files[0].file as Blob, files[0].file.name);
+      } else if (!values.image) {
+        // user removed image — mark for deletion
+        formData.append("removeImage", "true");
       }
 
       await onSubmit(formData, actionType);
@@ -286,6 +297,7 @@ export function CategoryForm({
             </Card>
 
             {/* Image Upload */}
+            {/* Image Upload */}
             <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
               <CardHeader>
                 <CardTitle>Category Image</CardTitle>
@@ -314,7 +326,13 @@ export function CategoryForm({
                       <button
                         type="button"
                         className="absolute top-3 right-3 bg-black/70 text-white rounded-full p-2"
-                        onClick={() => removeFile(files[0]?.id)}
+                        onClick={() => {
+                          // ✅ Fix: clear both uploaded & existing image
+                          if (files.length > 0) {
+                            removeFile(files[0]?.id);
+                          }
+                          setValues((prev) => ({ ...prev, image: null }));
+                        }}
                       >
                         <XIcon className="h-4 w-4" />
                       </button>
@@ -341,6 +359,7 @@ export function CategoryForm({
                     </div>
                   )}
                 </div>
+
                 {errors.length > 0 && (
                   <div className="flex items-center gap-1 text-xs text-destructive mt-1">
                     <AlertCircleIcon className="h-3 w-3" />
@@ -377,7 +396,8 @@ export function CategoryForm({
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      Creating...
                     </>
                   ) : (
                     "Create"
@@ -391,7 +411,8 @@ export function CategoryForm({
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      Creating...
                     </>
                   ) : (
                     "Create & Create Another"

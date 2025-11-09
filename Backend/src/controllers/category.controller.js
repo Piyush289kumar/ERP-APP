@@ -1,6 +1,6 @@
 import slugify from "slugify";
 import Category from "../models/blogs/category.model.js";
-import { uploadToCloudinary } from "../utils/cloudinaryService.js";
+import { destroyFromCloudinary, uploadToCloudinary } from "../utils/cloudinaryService.js";
 
 export const getCategories = async (req, res) => {
   try {
@@ -173,15 +173,24 @@ export const updateCategory = async (req, res) => {
     let imageUrl = category.image;
     let iconUrl = category.icon;
 
-    // ✅ Handle image update
+    // ✅ Handle image removal
+    if (req.body.removeImage === "true" && category.image) {
+      try {
+        const oldPublicId = category.image.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`categories/images/${oldPublicId}`);
+      } catch (err) {
+        console.warn("Error removing old image:", err.message);
+      }
+      imageUrl = null;
+    }
+
+    // ✅ Handle image upload
     if (req.files?.image?.[0]?.path) {
       try {
-        // delete old image
         if (category.image) {
           const oldPublicId = category.image.split("/").pop().split(".")[0];
           await destroyFromCloudinary(`categories/images/${oldPublicId}`);
         }
-
         const uploadImg = await uploadToCloudinary(
           req.files.image[0].path,
           "categories/images"
@@ -189,24 +198,6 @@ export const updateCategory = async (req, res) => {
         imageUrl = uploadImg.secure_url;
       } catch (err) {
         console.warn("Error uploading image:", err.message);
-      }
-    }
-
-    // ✅ Handle icon update
-    if (req.files?.icon?.[0]?.path) {
-      try {
-        if (category.icon) {
-          const oldPublicId = category.icon.split("/").pop().split(".")[0];
-          await destroyFromCloudinary(`categories/icons/${oldPublicId}`);
-        }
-
-        const uploadIcon = await uploadToCloudinary(
-          req.files.icon[0].path,
-          "categories/icons"
-        );
-        iconUrl = uploadIcon.secure_url;
-      } catch (err) {
-        console.warn("Error uploading icon:", err.message);
       }
     }
 
