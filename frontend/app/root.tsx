@@ -47,7 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <QueryProvider>
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
               {children}
-              <Toaster position="top-right" />
+              <Toaster position="bottom-right" />
               <ScrollRestoration />
               <Scripts />
             </ThemeProvider>
