@@ -1,4 +1,4 @@
-// app/components/crud/CrudPagination.tsx
+// app/components/crud/category-pagination.tsx
 "use client";
 import {
   Pagination,
@@ -10,20 +10,20 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 // The interface must include all props that the component will use or pass down.
-interface CrudPaginationProps {
+interface CategoryPaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   pageSize: number;
   onPageSizeChange: (size: number) => void;
 }
-export function CrudPagination({
+export function CategoryPagination({
   page,
   totalPages,
   onPageChange,
   pageSize,
   onPageSizeChange,
-}: CrudPaginationProps) {
+}: CategoryPaginationProps) {
   // Function to generate the list of page numbers to display
   const getPagesToShow = () => {
     const pages = [];

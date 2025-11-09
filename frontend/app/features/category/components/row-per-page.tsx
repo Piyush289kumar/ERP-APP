@@ -1,4 +1,4 @@
-// app/components/crud/RowsPerPageDropdownMenu.tsx
+// app/components/crud/row-per-page.tsx
 "use client";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArchiveIcon, ChevronDown, MailCheckIcon } from "lucide-react";
-import { ButtonGroup } from "../ui/button-group";
+import { ButtonGroup } from "../../../components/ui/button-group";
 import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 // 1. Define props to make the component interactive
 interface RowsPerPageDropdownMenuProps {

@@ -2,8 +2,8 @@
 
 import { configureStore } from '@reduxjs/toolkit'
 import userReducer from '~/features/user/userSlice'
-import categoryReducer from '~/features/category/categorySlice'
-import { categoryApi } from '~/features/category/categoryApi'
+import categoryReducer from '~/features/category/data/categorySlice'
+import { categoryApi } from '~/features/category/data/categoryApi'
 
 export const store = configureStore({
   reducer: {

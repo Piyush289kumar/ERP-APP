@@ -1,5 +1,7 @@
-// app/components/crud/CrudForm.tsx
+// app/components/crud/CategoryForm.tsx
+
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +23,10 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ImageIcon, UploadIcon, XIcon, AlertCircleIcon } from "lucide-react";
+import { ImageIcon, UploadIcon, XIcon, AlertCircleIcon, Loader2 } from "lucide-react";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
+
 export type FieldType =
   | "text"
   | "textarea"
@@ -31,6 +34,7 @@ export type FieldType =
   | "select"
   | "image"
   | "section";
+
 export interface FieldConfig {
   name?: string;
   label?: string;
@@ -40,7 +44,8 @@ export interface FieldConfig {
   options?: { label: string; value: string }[];
   sectionTitle?: string;
 }
-interface CrudFormProps {
+
+interface CategoryFormProps {
   title?: string;
   fields: FieldConfig[];
   defaultValues?: Record<string, any>;
@@ -49,7 +54,8 @@ interface CrudFormProps {
   submitLabel?: string;
   mode?: "create" | "edit";
 }
-export function CrudForm({
+
+export function CategoryForm({
   title,
   fields,
   defaultValues = {},
@@ -57,11 +63,14 @@ export function CrudForm({
   onCancel,
   submitLabel = "Save",
   mode = "create",
-}: CrudFormProps) {
+}: CategoryFormProps) {
   const [values, setValues] = useState<Record<string, any>>(defaultValues);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     setValues(defaultValues);
   }, [defaultValues]);
+
   const [
     { files, isDragging, errors },
     {
@@ -77,20 +86,25 @@ export function CrudForm({
     accept: "image/png,image/jpeg,image/jpg,image/webp,image/gif",
     maxSize: 2 * 1024 * 1024,
   });
+
   const previewUrl = files?.[0]?.preview || values?.image || null;
+
   const handleChange = (name: string, value: any) =>
     setValues((prev) => ({ ...prev, [name]: value }));
+
   const handleSubmit = async (
     e: React.FormEvent,
     actionType: string = "save"
   ) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     const formData = new FormData();
+
     try {
       for (const key in values) {
         const val = values[key];
-        if (key === "parentCategory" && (val === "none" || val === ""))
-          continue;
+        if (key === "parentCategory" && (val === "none" || val === "")) continue;
         if (val !== undefined && val !== null) {
           if (typeof val === "object" && !Array.isArray(val)) {
             for (const subKey in val) {
@@ -101,15 +115,20 @@ export function CrudForm({
           }
         }
       }
+
       if (files.length > 0 && files[0].file instanceof Blob) {
         formData.append("image", files[0].file as Blob, files[0].file.name);
       }
+
       await onSubmit(formData, actionType);
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong while submitting the form.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
@@ -123,6 +142,7 @@ export function CrudForm({
           </p>
         </header>
       )}
+
       {/* Form Layout */}
       <form id="crud-form" onSubmit={(e) => handleSubmit(e, "save")}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -193,6 +213,7 @@ export function CrudForm({
                   ))}
               </CardContent>
             </Card>
+
             {/* SEO Settings */}
             <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
               <CardHeader>
@@ -232,6 +253,7 @@ export function CrudForm({
               </CardContent>
             </Card>
           </div>
+
           {/* RIGHT SECTION */}
           <div className="space-y-6">
             {/* Visibility */}
@@ -262,6 +284,7 @@ export function CrudForm({
                   ))}
               </CardContent>
             </Card>
+
             {/* Image Upload */}
             <Card className="rounded-xl border-border shadow-sm hover:shadow-md transition">
               <CardHeader>
@@ -328,6 +351,7 @@ export function CrudForm({
             </Card>
           </div>
         </div>
+
         {/* Footer Buttons */}
         <Separator className="my-8" />
         <div className="lg:col-span-3 flex justify-start border-t border-border pt-6">
@@ -335,33 +359,52 @@ export function CrudForm({
             {mode === "edit" ? (
               <Button
                 type="submit"
-                form="crud-form"
+                disabled={isSubmitting}
                 className="rounded-lg bg-primary text-white hover:opacity-90"
               >
-                Save Changes
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             ) : (
               <>
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="rounded-lg bg-primary text-white hover:opacity-90"
                   onClick={(e) => handleSubmit(e, "create")}
                 >
-                  Create
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                    </>
+                  ) : (
+                    "Create"
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   type="button"
+                  disabled={isSubmitting}
                   onClick={(e) => handleSubmit(e, "create_another")}
                 >
-                  Create & Create Another
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                    </>
+                  ) : (
+                    "Create & Create Another"
+                  )}
                 </Button>
               </>
             )}
+
             {onCancel && (
               <Button
                 variant="outline"
                 type="button"
+                disabled={isSubmitting}
                 onClick={onCancel}
                 className="rounded-lg"
               >

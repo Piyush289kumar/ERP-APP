@@ -31,8 +31,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CrudPagination } from "./CrudPagination";
-import { RowsPerPageDropdownMenu } from "./RowsPerPageDropdownMenu";
+import { CategoryPagination } from "./category-pagination";
+import { RowsPerPageDropdownMenu } from "./row-per-page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,10 +42,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../ui/alert-dialog";
+} from "../../../components/ui/alert-dialog";
 
 // Define props for the generic data table
-interface CrudDataTableProps<TData, TValue> {
+interface CategoryDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading?: boolean;
@@ -59,7 +59,7 @@ interface CrudDataTableProps<TData, TValue> {
   deleteItemNameKey?: keyof TData;
 }
 
-export function CrudDataTable<TData, TValue>({
+export function CategoryDataTable<TData, TValue>({
   columns,
   data,
   isLoading = false,
@@ -71,7 +71,7 @@ export function CrudDataTable<TData, TValue>({
   onPageSizeChange,
   onDelete,
   deleteItemNameKey = "record" as keyof TData,
-}: CrudDataTableProps<TData, TValue>) {
+}: CategoryDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -143,7 +143,7 @@ export function CrudDataTable<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              View <GitCompare  />
+              View <GitCompare />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -244,7 +244,7 @@ export function CrudDataTable<TData, TValue>({
         </div>
         {/* Right: Pagination controls */}
         <div className="flex justify-end">
-          <CrudPagination
+          <CategoryPagination
             page={page}
             totalPages={totalPages}
             onPageChange={onPageChange}
@@ -255,7 +255,7 @@ export function CrudDataTable<TData, TValue>({
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog 
+      <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >

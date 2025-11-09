@@ -19,8 +19,8 @@ import {
   useDeleteCategoryMutation,
   useUpdateCategoryMutation,
   usePartiallyUpdateCategoryMutation,
-} from "~/features/category/categoryApi";
-import { CrudDataTable } from "@/components/crud";
+} from "~/features/category/data/categoryApi";
+import { CategoryDataTable } from "~/features/category/components";
 import React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
@@ -302,7 +302,7 @@ export default function CategoryPage() {
           <CirclePlus /> Add Category
         </Button>
       </div>
-      <CrudDataTable
+      <CategoryDataTable
         data={categoryData}
         columns={columns}
         isLoading={isLoading}
