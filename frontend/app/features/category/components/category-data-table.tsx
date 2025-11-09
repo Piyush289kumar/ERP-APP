@@ -102,20 +102,25 @@ export function CategoryDataTable<TData, TValue>({
 
   const [isDeleting, setIsDeleting] = React.useState(false); // ✅ Add loading state
 
-  // Function to confirm and execute deletion
+  // ✅ Function to confirm and execute deletion with loading toast
   const handleConfirmDelete = async () => {
     if (!itemToDelete || !onDelete) return;
-    try {
-      setIsDeleting(true); // ✅ Start loading
-      await onDelete(itemToDelete);
-      toast?.success?.("Item deleted successfully!");
-    } catch (error) {
-      toast?.error?.("Failed to delete the item.");
-    } finally {
-      setIsDeleting(false); // ✅ Stop loading
-      setIsDeleteDialogOpen(false);
-      setItemToDelete(null);
-    }
+
+    // Capture category name for better UX
+    const name = (itemToDelete as any)[deleteItemNameKey] || "this category";
+
+    setIsDeleting(true); // start local spinner
+
+    // Use sonner.promise for better feedback
+    await toast.promise(onDelete(itemToDelete), {
+      loading: `Deleting ${name}...`,
+      success: `${name} deleted successfully!`,
+      error: `Failed to delete ${name}.`,
+    });
+
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+    setItemToDelete(null);
   };
 
   const table = useReactTable({
