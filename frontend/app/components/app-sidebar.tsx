@@ -13,6 +13,8 @@ import {
   Settings2,
   SquareTerminal,
   Folder,
+  ChartBarStacked,
+  Album,
 } from "lucide-react";
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
@@ -67,8 +69,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {
         title: "Categories",
         url: "/admin/category",
-        icon: Folder,
+        icon: ChartBarStacked,
         isActive: isActive("/admin/category"),
+      },
+      {
+        title: "Services",
+        url: "/admin/service",
+        icon: Album,
+        isActive: isActive("/admin/service"),
       },
       {
         title: "Documentation",
