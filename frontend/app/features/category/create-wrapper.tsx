@@ -1,6 +1,6 @@
 // app/features/category/create-wrapper.tsx
-import CategoryFormPage from "./form";
+import CategoryForm from "~/features/category/components/form";
 
 export default function CreateCategory() {
-  return <CategoryFormPage mode="create" />;
+  return <CategoryForm mode="create" />;
 }

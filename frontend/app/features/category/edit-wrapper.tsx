@@ -1,7 +1,6 @@
 // app/features/category/edit-wrapper.tsx
-
-import CategoryFormPage from "./form";
+import CategoryForm from "~/features/category/components/form";
 
 export default function EditCategory() {
-  return <CategoryFormPage mode="edit" />;
+  return <CategoryForm mode="edit" />;
 }

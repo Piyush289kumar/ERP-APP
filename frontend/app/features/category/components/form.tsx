@@ -1,3 +1,5 @@
+// app/features/category/components/form.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -29,52 +24,51 @@ import {
 } from "lucide-react";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useGetCategoryByIdQuery,
+} from "../data/categoryApi";
 
-export type FieldType =
-  | "text"
-  | "textarea"
-  | "boolean"
-  | "select"
-  | "image"
-  | "section";
+export default function CategoryForm({ mode = "create" }: { mode?: "create" | "edit" }) {
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-export interface FieldConfig {
-  name?: string;
-  label?: string;
-  type: FieldType;
-  placeholder?: string;
-  required?: boolean;
-  options?: { label: string; value: string }[];
-  sectionTitle?: string;
-}
+  const isEdit = mode === "edit" || !!id;
 
-interface CrudFormProps {
-  title?: string;
-  fields: FieldConfig[];
-  defaultValues?: Record<string, any>;
-  onSubmit: (formData: FormData, actionType?: string) => Promise<void> | void;
-  onCancel?: () => void;
-  submitLabel?: string;
-  mode?: "create" | "edit";
-  entityLabel?: string; // e.g., Category, Customer
-}
+  // ✅ Fetch category only when editing
+  const { data: categoryData, isLoading: loadingCategory } =
+    useGetCategoryByIdQuery(id, { skip: !isEdit });
 
-export function CrudForm({
-  title,
-  fields,
-  defaultValues = {},
-  onSubmit,
-  onCancel,
-  submitLabel = "Save",
-  mode = "create",
-  entityLabel = "record",
-}: CrudFormProps) {
-  const [values, setValues] = useState<Record<string, any>>(defaultValues);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createCategory] = useCreateCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
 
+  const [values, setValues] = useState({
+    name: "",
+    description: "",
+    isActive: true,
+    isFeatured: false,
+    showInMenu: false,
+    image: null,
+  });
+
+  // ✅ Populate form when category data loads
   useEffect(() => {
-    setValues(defaultValues);
-  }, [defaultValues]);
+    if (categoryData?.data) {
+      const category = categoryData.data;
+      setValues({
+        name: category.name || "",
+        description: category.description || "",
+        isActive: category.isActive ?? true,
+        isFeatured: category.isFeatured ?? false,
+        showInMenu: category.showInMenu ?? false,
+        image: category.image || null,
+      });
+    }
+  }, [categoryData]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [
     { files, isDragging, errors },
@@ -97,25 +91,16 @@ export function CrudForm({
   const handleChange = (name: string, value: any) =>
     setValues((prev) => ({ ...prev, [name]: value }));
 
-  const handleSubmit = async (
-    e: React.FormEvent,
-    actionType: string = "save"
-  ) => {
+  const handleSubmit = async (e: React.FormEvent, actionType: string = "save") => {
     e.preventDefault();
     setIsSubmitting(true);
-    const formData = new FormData();
 
+    const formData = new FormData();
     try {
       for (const key in values) {
-        const val = values[key];
+        const val = values[key as keyof typeof values];
         if (val !== undefined && val !== null) {
-          if (typeof val === "object" && !Array.isArray(val)) {
-            for (const subKey in val) {
-              formData.append(`${key}[${subKey}]`, val[subKey]);
-            }
-          } else {
-            formData.append(key, String(val));
-          }
+          formData.append(key, String(val));
         }
       }
 
@@ -125,125 +110,126 @@ export function CrudForm({
         formData.append("removeImage", "true");
       }
 
-      await onSubmit(formData, actionType);
-    } catch (error) {
-      console.error(error);
-      toast.error(`Something went wrong while saving the ${entityLabel}.`);
+      if (isEdit) {
+        await updateCategory({ id, formData }).unwrap();
+        toast.success("Category updated successfully!");
+      } else {
+        await createCategory(formData).unwrap();
+        toast.success("Category created successfully!");
+        if (actionType === "create_another") {
+          setValues({
+            name: "",
+            description: "",
+            isActive: true,
+            isFeatured: false,
+            showInMenu: false,
+            image: null,
+          });
+          return;
+        }
+      }
+
+      navigate("/admin/category");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to save category.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ✅ Show loader for edit mode
+  if (loadingCategory && isEdit) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="ml-2 text-sm text-muted-foreground">
+          Loading category details...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {title && (
-        <header>
-          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {mode === "edit"
-              ? `Update existing ${entityLabel} information below.`
-              : `Fill out the form to create a new ${entityLabel}.`}
-          </p>
-        </header>
-      )}
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {isEdit ? "Edit Category" : "Create Category"}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isEdit
+            ? "Update existing category details below."
+            : "Fill out the form to create a new category."}
+        </p>
+      </header>
 
-      <form id="crud-form" onSubmit={(e) => handleSubmit(e, "save")}>
+      <form id="category-form" onSubmit={(e) => handleSubmit(e, "create")}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* LEFT */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="rounded-xl shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle>Main Information</CardTitle>
-                <CardDescription>
-                  Core details about this {entityLabel}
-                </CardDescription>
+                <CardDescription>Basic category details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {fields
-                  .filter((f) =>
-                    ["text", "textarea", "select"].includes(f.type)
-                  )
-                  .map((field, i) => (
-                    <div key={i} className="flex flex-col gap-2">
-                      <Label htmlFor={field.name}>{field.label}</Label>
-                      {field.type === "text" && (
-                        <Input
-                          id={field.name}
-                          placeholder={field.placeholder}
-                          value={values[field.name ?? ""] || ""}
-                          onChange={(e) =>
-                            handleChange(field.name!, e.target.value)
-                          }
-                          required={field.required}
-                        />
-                      )}
-                      {field.type === "textarea" && (
-                        <Textarea
-                          id={field.name}
-                          placeholder={field.placeholder}
-                          value={values[field.name ?? ""] || ""}
-                          onChange={(e) =>
-                            handleChange(field.name!, e.target.value)
-                          }
-                        />
-                      )}
-                      {field.type === "select" && (
-                        <Select
-                          value={values[field.name!] || ""}
-                          onValueChange={(val) =>
-                            handleChange(field.name!, val)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={field.placeholder || "Select option"}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.options?.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  ))}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="name">Category Name</Label>
+                  <Input
+                    id="name"
+                    value={values.name}
+                    placeholder="Enter category name"
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    rows={3}
+                    placeholder="Enter short description"
+                    value={values.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
 
           {/* RIGHT */}
           <div className="space-y-6">
-            <Card className="rounded-xl shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle>Visibility</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {fields
-                  .filter((f) => f.type === "boolean")
-                  .map((field, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between border rounded-lg p-3"
-                    >
-                      <Label htmlFor={field.name}>{field.label}</Label>
-                      <Switch
-                        id={field.name}
-                        checked={!!values[field.name!]}
-                        onCheckedChange={(checked) =>
-                          handleChange(field.name!, checked)
-                        }
-                      />
-                    </div>
-                  ))}
+                {[
+                  { name: "isActive", label: "Active" },
+                  { name: "isFeatured", label: "Featured" },
+                  { name: "showInMenu", label: "Show in Menu" },
+                ].map((field) => (
+                  <div
+                    key={field.name}
+                    className="flex items-center justify-between border rounded-lg p-3"
+                  >
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <Switch
+                      id={field.name}
+                      checked={!!values[field.name as keyof typeof values]}
+                      onCheckedChange={(checked) =>
+                        handleChange(field.name, checked)
+                      }
+                    />
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
-            <Card className="rounded-xl shadow-sm">
+            {/* Image */}
+            <Card>
               <CardHeader>
-                <CardTitle>{entityLabel} Image</CardTitle>
+                <CardTitle>Category Image</CardTitle>
               </CardHeader>
               <CardContent>
                 <div
@@ -251,7 +237,7 @@ export function CrudForm({
                   onDragLeave={handleDragLeave}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 ${
+                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition ${
                     isDragging ? "bg-accent border-primary" : "border-border"
                   }`}
                 >
@@ -300,9 +286,9 @@ export function CrudForm({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* FOOTER */}
         <div className="flex gap-3 pt-6">
-          {mode === "edit" ? (
+          {isEdit ? (
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -343,16 +329,15 @@ export function CrudForm({
               </Button>
             </>
           )}
-          {onCancel && (
-            <Button
-              variant="outline"
-              type="button"
-              disabled={isSubmitting}
-              onClick={onCancel}
-            >
-              Cancel
-            </Button>
-          )}
+
+          <Button
+            variant="outline"
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => navigate("/admin/category")}
+          >
+            Cancel
+          </Button>
         </div>
       </form>
     </div>
