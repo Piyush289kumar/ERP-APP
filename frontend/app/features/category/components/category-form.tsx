@@ -353,8 +353,8 @@ export function CategoryForm({
         </div>
 
         {/* Footer Buttons */}
-        <Separator className="my-8" />
-        <div className="lg:col-span-3 flex justify-start border-t border-border pt-6">
+        {/* <Separator className="my-8" /> */}
+        <div className="lg:col-span-3 flex justify-start border-border pt-6">
           <div className="flex gap-3">
             {mode === "edit" ? (
               <Button
