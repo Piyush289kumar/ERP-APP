@@ -31,11 +31,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
+import { DataTableBulkActions } from "./components/data-table-bulk-actions";
 
 export default function CategoryPage() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
+  const [tableInstance, setTableInstance] = React.useState<any>(null);
   const { data, isLoading } = useGetCategoriesQuery({ page, limit });
 
   const categoryData = data?.data ?? [];
@@ -302,6 +304,10 @@ export default function CategoryPage() {
           <CirclePlus /> Add Category
         </Button>
       </div>
+
+      {/* ✅ Bulk Actions Toolbar */}
+      {tableInstance && <DataTableBulkActions table={tableInstance} />}
+
       <CategoryDataTable
         data={categoryData}
         columns={columns}
@@ -314,6 +320,7 @@ export default function CategoryPage() {
         onPageSizeChange={handlePageSizeChange}
         onDelete={handleDelete} // Pass the delete handler
         deleteItemNameKey="name" // Specify the key for the item's name
+        onTableReady={setTableInstance} // ✅ get instance here
       />
     </div>
   );

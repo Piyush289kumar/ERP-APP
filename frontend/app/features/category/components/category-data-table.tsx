@@ -13,7 +13,12 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, GitCompare, Loader2, TriangleAlertIcon } from "lucide-react";
+import {
+  ChevronDown,
+  GitCompare,
+  Loader2,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -58,6 +63,7 @@ interface CategoryDataTableProps<TData, TValue> {
   onPageSizeChange: (size: number) => void;
   onDelete?: (item: TData) => Promise<void>;
   deleteItemNameKey?: keyof TData;
+  onTableReady?: (table: any) => void;
 }
 
 export function CategoryDataTable<TData, TValue>({
@@ -72,6 +78,7 @@ export function CategoryDataTable<TData, TValue>({
   onPageSizeChange,
   onDelete,
   deleteItemNameKey = "record" as keyof TData,
+  onTableReady,
 }: CategoryDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -114,10 +121,8 @@ export function CategoryDataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    // Since we are doing server-side pagination, we disable the table's internal pagination
     manualPagination: true,
     pageCount: totalPages,
-    // ... other table options
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -131,11 +136,16 @@ export function CategoryDataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
-    // Provide openDeleteDialog to the table instance
     meta: {
       openDeleteDialog,
     },
   });
+
+  // ✅ Notify parent once table is ready
+  React.useEffect(() => {
+    if (onTableReady) onTableReady(table);
+  }, [table, onTableReady]);
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
@@ -261,9 +271,7 @@ export function CategoryDataTable<TData, TValue>({
         </div>
       </div>
 
-    
-    
-     {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={(open) => {
@@ -323,9 +331,6 @@ export function CategoryDataTable<TData, TValue>({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-
-
     </div>
   );
 }
