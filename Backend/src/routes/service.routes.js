@@ -1,42 +1,50 @@
-import Router from "express";
+import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
+import upload from "../config/multer.js";
 import {
+  createService,
+  getServices,
+  getServiceById,
+  updateService,
+  partiallyUpdateService,
   destroyServiceById,
   getAllActiveServices,
-  getAllServices,
-  getServiceById,
-  modifyService,
 } from "../controllers/service.controller.js";
-import upload from "../config/multer.js";
 
 const router = Router();
 
 /* ================================
    🟢 Public Routes (No Auth Required)
    ================================ */
-
-// ✅ Get all active services (public site)
-router.get("/", getAllActiveServices);
-
-// ✅ Get service by ID (public)
-router.get("/view/:id", getServiceById);
+router.get("/public", getAllActiveServices);
+router.get("/public/:id", getServiceById);
 
 /* ================================
    🔒 Admin-Protected Routes
    ================================ */
+router.get("/", ensureAuth, getServices);
+router.get("/:id", ensureAuth, getServiceById);
 
-// ⚠️ Note: Placed before dynamic routes to avoid `/all` -> ObjectId errors
-router.get("/admin/all", ensureAuth, getAllServices);
-
-// ✅ Create or update Service (with optional avatar upload)
+// Create Service (with optional thumbnail upload)
 router.post(
-  "/admin/save",
+  "/",
   ensureAuth,
   upload.fields([{ name: "thumbnail", maxCount: 1 }]),
-  modifyService
+  createService
 );
 
-// ✅ Delete Service by ID
-router.delete("/admin/:id", ensureAuth, destroyServiceById);
+// Full update (PUT)
+router.put(
+  "/:id",
+  ensureAuth,
+  upload.fields([{ name: "thumbnail", maxCount: 1 }]),
+  updateService
+);
+
+// Partial update (PATCH)
+router.patch("/:id", ensureAuth, partiallyUpdateService);
+
+// Delete Service
+router.delete("/:id", ensureAuth, destroyServiceById);
 
 export default router;

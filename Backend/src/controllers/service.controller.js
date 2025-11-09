@@ -1,26 +1,20 @@
+import slugify from "slugify";
 import Service from "../models/service.model.js";
 import {
   destroyFromCloudinary,
   uploadToCloudinary,
 } from "../utils/cloudinaryService.js";
 
-// Get All Services - Protective (Admin)
-// Admin : Get All Services (Paginated, Searchable and Sortable)
-
-export const getAllServices = async (req, res) => {
+/**
+ * 🟢 Get All Services (Admin)
+ */
+export const getServices = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search = "",
-      sortBy = "createdAt",
-      order = "desc",
-    } = req.query;
-
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const sortOrder = order === "asc" ? 1 : -1;
+    const search = req.query.search || "";
 
-    // Search Filter (by title, subHeading or description)
     const filter = search
       ? {
           $or: [
@@ -31,161 +25,93 @@ export const getAllServices = async (req, res) => {
         }
       : {};
 
-    const [services, totalCount] = await Promise.all([
-      Service.find(filter)
-        .populate("createdBy updatedBy", "name email")
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(Number(limit))
-        .select("title subHeading description thumbnail isActive createdAt")
-        .lean(),
+    const total = await Service.countDocuments(filter);
+    const services = await Service.find(filter)
+      .populate("createdBy updatedBy", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-      Service.countDocuments(filter),
-    ]);
-
-    if (!services.length) {
-      return res
-        .status(404)
-        .json({ message: "No services found.", data: [], total: 0 });
-    }
-
-    return res.status(200).json({
-      message: "services fetched successfully.",
+    res.status(200).json({
+      message: "Services fetched successfully.",
       data: services,
       pagination: {
-        total: totalCount,
-        page: Number(page),
-        pages: Math.ceil(totalCount / limit),
-        limit: Number(limit),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        limit,
       },
     });
   } catch (error) {
-    console.error("Internal Error:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
-  }
-};
-
-// Get All Active Service - Public
-export const getAllActiveServices = async (req, res) => {
-  try {
-    // Uses static method defined in model (for performance & reuse)
-    const services = await Service.fetchActive(12);
-
-    if (!services.length) {
-      return res
-        .status(404)
-        .json({ message: "No active services found.", data: [] });
-    }
-
-    return res.status(200).json({
-      message: "Active services fetched successfully.",
-      data: services,
-      count: services.length,
-    });
-  } catch (error) {
-    console.error("Internal Error:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
-  }
-};
-
-export const getServiceById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!id) {
-      return res.status(400).json({
-        message: "ID is required.",
-      });
-    }
-
-    const service = await Service.findById(id);
-    if (!service) {
-      return res.status(404).json({
-        message: `Service not found with ${id}`,
-      });
-    }
-
-    return res.status(200).json({
-      message: "Service fetch successfully.",
-      data: service,
-    });
-  } catch (error) {
-    console.error("Internal Error:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
 
 /**
- * ✅ Create or Update Service (Protected)
+ * 🟢 Get Active Services (Public)
  */
-export const modifyService = async (req, res) => {
+export const getAllActiveServices = async (req, res) => {
   try {
-    const { id, title, subHeading, description, isActive } = req.body;
+    const services = await Service.fetchActive(12);
+    if (!services.length)
+      return res.status(404).json({ message: "No active services found." });
 
-    // Basic Validation
-    if (!title?.trim() || !description?.trim() || !subHeading?.trim()) {
-      return res.status(400).json({
-        message: "Title, subHeading & Description are required.",
-      });
-    }
+    res.status(200).json({
+      message: "Active services fetched successfully.",
+      data: services,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/**
+ * 🟢 Get Service by ID
+ */
+export const getServiceById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = await Service.findById(id)
+      .populate("createdBy updatedBy", "name email")
+      .lean();
+
+    if (!service)
+      return res.status(404).json({ message: "Service not found." });
+
+    res.status(200).json({
+      message: "Service fetched successfully.",
+      data: service,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/**
+ * 🟢 Create Service
+ */
+export const createService = async (req, res) => {
+  try {
+    const { title, subHeading, description, isActive } = req.body;
+
+    if (!title || !description)
+      return res
+        .status(400)
+        .json({ message: "Title and description are required." });
+
+    // Prevent duplicate titles
+    const existing = await Service.findOne({ title });
+    if (existing)
+      return res.status(400).json({ message: "Service title already exists." });
 
     let thumbnailUrl = null;
-
-    // Upload Thumbnail if Provided
     if (req.files?.thumbnail?.[0]?.path) {
-      const uploadThumbnail = await uploadToCloudinary(
+      const uploadThumb = await uploadToCloudinary(
         req.files.thumbnail[0].path,
         "service/thumbnail"
       );
-      thumbnailUrl = uploadThumbnail.secure_url;
-    }
-
-    // --- 🧩 UPDATE Existing Service ---
-    if (id) {
-      const service = await Service.findById(id);
-      if (!service) {
-        return res.status(404).json({
-          message: `Service not found with ID: ${id}`,
-        });
-      }
-
-      // If new thumbnail uploaded → delete old one
-      if (thumbnailUrl && service.thumbnail) {
-        try {
-          const oldPublicId = service.thumbnail.split("/").pop().split(".")[0];
-          await destroyFromCloudinary(`service/thumbnail/${oldPublicId}`);
-        } catch (e) {
-          console.warn("⚠️ Failed to delete old image:", e.message);
-        }
-      }
-
-      // Update only changed fields
-      service.title = title || service.title;
-      service.subHeading = subHeading || service.subHeading;
-      service.description = description || service.description;
-      service.thumbnail = thumbnailUrl || service.thumbnail;
-      service.isActive = isActive ?? service.isActive;
-      service.updatedBy = req.user?._id;
-
-      await service.save();
-
-      return res.status(200).json({
-        message: "✅ Service updated successfully.",
-        data: service,
-      });
-    }
-
-    // --- 🆕 CREATE New Service ---
-    const existing = await Service.findOne({ title });
-    if (existing) {
-      return res.status(400).json({
-        message: "❌ Service with this title already exists.",
-      });
+      thumbnailUrl = uploadThumb.secure_url;
     }
 
     const service = await Service.create({
@@ -197,48 +123,116 @@ export const modifyService = async (req, res) => {
       createdBy: req.user?._id,
     });
 
-    return res.status(201).json({
-      message: "✅ Service created successfully.",
+    res.status(201).json({
+      message: "Service created successfully.",
       data: service,
     });
   } catch (error) {
-    console.error("❌ Error in modifyService:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
 
-// Destroy Service by ID
+/**
+ * 🟢 Update Service (PUT)
+ */
+export const updateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, subHeading, description, isActive } = req.body;
+
+    const service = await Service.findById(id);
+    if (!service)
+      return res.status(404).json({ message: "Service not found." });
+
+    let thumbnailUrl = service.thumbnail;
+
+    // Handle new thumbnail
+    if (req.files?.thumbnail?.[0]?.path) {
+      if (service.thumbnail) {
+        try {
+          const oldPublicId = service.thumbnail.split("/").pop().split(".")[0];
+          await destroyFromCloudinary(`service/thumbnail/${oldPublicId}`);
+        } catch (err) {
+          console.warn("Failed to delete old thumbnail:", err.message);
+        }
+      }
+
+      const uploadThumb = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "service/thumbnail"
+      );
+      thumbnailUrl = uploadThumb.secure_url;
+    }
+
+    // Update fields
+    service.title = title ?? service.title;
+    service.subHeading = subHeading ?? service.subHeading;
+    service.description = description ?? service.description;
+    service.isActive = isActive ?? service.isActive;
+    service.thumbnail = thumbnailUrl;
+    service.updatedBy = req.user?._id;
+
+    await service.save();
+
+    res
+      .status(200)
+      .json({ message: "Service updated successfully.", data: service });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/**
+ * 🟢 Partial Update (PATCH)
+ */
+export const partiallyUpdateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const service = await Service.findById(id);
+    if (!service)
+      return res.status(404).json({ message: "Service not found." });
+
+    // Dynamically apply updates
+    for (const [key, value] of Object.entries(updates)) {
+      if (key !== "_id" && value !== undefined) {
+        service[key] = value;
+      }
+    }
+
+    service.updatedBy = req.user?._id;
+    await service.save();
+
+    res.status(200).json({
+      message: "Service updated successfully.",
+      data: service,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/**
+ * 🟢 Delete Service
+ */
 export const destroyServiceById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({ message: "ID is required." });
-    }
-
-    // Find Service by ID
     const service = await Service.findById(id);
-    if (!service) {
-      return res.status(404).json({ message: "Service not found." });
-    }
 
-    // Delete from Cloudinary if thumbnail exists
+    if (!service)
+      return res.status(404).json({ message: "Service not found." });
+
     if (service.thumbnail) {
       const publicId = service.thumbnail.split("/").pop().split(".")[0];
       await destroyFromCloudinary(`service/thumbnail/${publicId}`);
     }
 
-    // Delete from DB
     await Service.findByIdAndDelete(id);
 
-    return res.status(200).json({ message: "Service deleted successfully." });
+    res.status(200).json({ message: "Service deleted successfully." });
   } catch (error) {
-    console.error("Internal Error:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
