@@ -1,4 +1,4 @@
-// app/routes/category/categorySlice.ts
+// app/routes/category/data/categorySlice.ts
 
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 

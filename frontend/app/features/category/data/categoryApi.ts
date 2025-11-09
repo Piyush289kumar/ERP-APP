@@ -1,4 +1,4 @@
-// app/routes/category/categoryApi.ts - (using RTK Query)
+// app/routes/category/data/categoryApi.ts - (using RTK Query)
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getToken } from "~/utils/auth";
