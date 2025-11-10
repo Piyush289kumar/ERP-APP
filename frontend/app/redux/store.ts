@@ -17,10 +17,14 @@ import { categoryApi } from "~/features/category/data/categoryApi";
 import serviceReducer from "~/features/service/data/serviceSlice";
 import { serviceApi } from "~/features/service/data/serviceApi";
 
-
 // ⚙️  Policy Feature
 import policyReducer from "~/features/policy/data/policySlice";
 import { policyApi } from "~/features/policy/data/policyApi";
+
+
+// ⚙️  Testimonial Feature
+import testimonialReducer from "~/features/testimonial/data/testimonialSlice";
+import { testimonialApi } from "~/features/testimonial/data/testimonialApi";
 
 export const store = configureStore({
   reducer: {
@@ -44,13 +48,18 @@ export const store = configureStore({
     policy: policyReducer,
     [policyApi.reducerPath]: policyApi.reducer,
 
+    // ✅ Testimonial state + API
+    testimonial: testimonialReducer,
+    [testimonialApi.reducerPath]: testimonialApi.reducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       appConfigurationApi.middleware,
       categoryApi.middleware,
       serviceApi.middleware,
-      policyApi.middleware
+      policyApi.middleware,
+      testimonialApi.middleware
     ),
 });
 

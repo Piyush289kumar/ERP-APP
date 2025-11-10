@@ -17,6 +17,7 @@ export default [
             ...createCrudRoutes("category"),
             ...createCrudRoutes("service"),
             ...createCrudRoutes("policy"),
+            ...createCrudRoutes("testimonial"),
 
             // Add other custom routes freely
             //   route("reports", "features/reports/index.tsx"),
