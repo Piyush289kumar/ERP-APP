@@ -1,77 +1,54 @@
-import Policy from "../models/policy.model.js";
 import slugify from "slugify";
+import Policy from "../models/policy.model.js";
 
-// ===============================================
-// 🧩 Get All Policies (Admin Protected)
-// ===============================================
-export const getAllPolicies = async (req, res) => {
+/* =====================================================
+   🔒 ADMIN ROUTES
+===================================================== */
+
+/** 📄 Get All Policies (Paginated for Admin) */
+export const getPolicies = async (req, res) => {
   try {
-    const policies = await Policy.find({})
-      .populate("createdBy updatedBy", "name email")
-      .sort({ createdAt: -1 })
-      .lean();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
 
-    if (!policies.length) {
-      return res.status(404).json({ message: "No policies found." });
-    }
+    const total = await Policy.countDocuments();
+
+    const policies = await Policy.find()
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     return res.status(200).json({
       message: "✅ Policies fetched successfully.",
-      count: policies.length,
       data: policies,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
-    console.error("❌ Error fetching all policies:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error fetching policies:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
 
-// ===============================================
-// 🟢 Get All Active Policies (Public)
-// ===============================================
-export const getAllActivePolicies = async (req, res) => {
+/** 🔍 Get Policy by ID (Admin) */
+export const getPolicyById = async (req, res) => {
   try {
-    const activePolicies = await Policy.find({ isActive: true })
-      .select("title slug description")
+    const { id } = req.params;
+    const policy = await Policy.findById(id)
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email")
       .lean();
 
-    if (!activePolicies.length) {
-      return res.status(404).json({ message: "No active policies found." });
-    }
-
-    return res.status(200).json({
-      message: "✅ Active policies fetched successfully.",
-      count: activePolicies.length,
-      data: activePolicies,
-    });
-  } catch (error) {
-    console.error("❌ Error fetching active policies:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
-  }
-};
-
-// ===============================================
-// 🔍 Get Active Policy by Slug (Public)
-// ===============================================
-export const getActivePoliciesBySlug = async (req, res) => {
-  try {
-    const { slug } = req.params;
-
-    if (!slug?.trim()) {
-      return res.status(400).json({ message: "Slug is required." });
-    }
-
-    const policy = await Policy.findOne({ slug, isActive: true }).lean();
     if (!policy) {
-      return res
-        .status(404)
-        .json({ message: `Policy not found with slug: ${slug}` });
+      return res.status(404).json({ message: "Policy not found." });
     }
 
     return res.status(200).json({
@@ -79,125 +56,190 @@ export const getActivePoliciesBySlug = async (req, res) => {
       data: policy,
     });
   } catch (error) {
-    console.error("❌ Error fetching policy by slug:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error fetching policy:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
 
-// ===============================================
-// ✏️ Create or Update Policy (Admin Protected)
-// ===============================================
-export const modifyPolicy = async (req, res) => {
+/** ➕ Create Policy */
+export const createPolicy = async (req, res) => {
   try {
-    const { id, title, slug, description, isActive } = req.body;
+    const { title, description, isActive } = req.body;
 
     if (!title?.trim()) {
       return res.status(400).json({ message: "Policy title is required." });
     }
 
-    // Auto-generate slug if not provided
-    const generatedSlug = slug
-      ? slugify(slug, { lower: true, strict: true })
-      : slugify(title, { lower: true, strict: true });
-
-    if (id) {
-      // 🧭 Update Existing Policy
-      const policy = await Policy.findById(id);
-      if (!policy) {
-        return res.status(404).json({ message: "Policy not found." });
-      }
-
-      // Prevent duplicate slug
-      const duplicate = await Policy.findOne({
-        slug: generatedSlug,
-        _id: { $ne: id },
-      });
-      if (duplicate) {
-        return res
-          .status(400)
-          .json({ message: "Another policy with this slug already exists." });
-      }
-
-      // Update Fileds
-      policy.title = title || policy.title;
-      policy.slug = generatedSlug || policy.slug;
-      policy.description = description || policy.description;
-      policy.isActive = isActive ?? policy.isActive;
-      policy.updatedBy = req.user?._id;
-
-      await policy.save();
-
-      return res.status(200).json({
-        message: "✅ Policy updated successfully.",
-        data: policy,
-      });
-    } else {
-      // 🆕 Create New Policy
-      const exists = await Policy.findOne({ slug: generatedSlug });
-      if (exists) {
-        return res
-          .status(400)
-          .json({ message: "Policy with this slug already exists." });
-      }
-
-      const newPolicy = await Policy.create({
-        title,
-        slug: generatedSlug,
-        description,
-        isActive: typeof isActive === "boolean" ? isActive : true,
-        createdBy: req.user?._id,
-      });
-
-      return res.status(201).json({
-        message: "✅ Policy created successfully.",
-        data: newPolicy,
-      });
+    const slug = slugify(title, { lower: true, strict: true });
+    const existing = await Policy.findOne({ slug });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "Policy with this title already exists." });
     }
-  } catch (error) {
-    console.error("❌ Error while modifying policy:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
+
+    const policy = await Policy.create({
+      title,
+      slug,
+      description: description || "",
+      isActive: typeof isActive === "boolean" ? isActive : true,
+      createdBy: req.user._id,
     });
+
+    return res.status(201).json({
+      message: "✅ Policy created successfully.",
+      data: policy,
+    });
+  } catch (error) {
+    console.error("❌ Error creating policy:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
 
-// ===============================================
-// 🔥 Destroy Policy by ID (Protected)
-// ===============================================
-
-export const destroyPolicyById = async (req, res) => {
+/** ✏️ Update Policy (PUT) */
+export const updatePolicy = async (req, res) => {
   try {
     const { id } = req.params;
+    const { title, description, isActive } = req.body;
 
-    // 🧩 Validate input
-    if (!id?.trim()) {
-      return res.status(400).json({ message: "Policy ID is required." });
-    }
-
-    // 🕵️ Check if policy exists
     const policy = await Policy.findById(id);
     if (!policy) {
       return res.status(404).json({ message: "Policy not found." });
     }
 
-    // 🗑️ Delete policy
+    // If title changes, regenerate slug
+    if (title && title !== policy.title) {
+      const newSlug = slugify(title, { lower: true, strict: true });
+      const duplicate = await Policy.findOne({
+        slug: newSlug,
+        _id: { $ne: id },
+      });
+      if (duplicate) {
+        return res
+          .status(400)
+          .json({ message: "Another policy with this title already exists." });
+      }
+      policy.title = title;
+      policy.slug = newSlug;
+    }
+
+    policy.description = description ?? policy.description;
+    policy.isActive = isActive ?? policy.isActive;
+    policy.updatedBy = req.user._id;
+
+    await policy.save();
+
+    return res.status(200).json({
+      message: "✅ Policy updated successfully.",
+      data: policy,
+    });
+  } catch (error) {
+    console.error("❌ Error updating policy:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/** 🔄 Partially Update Policy (PATCH) */
+export const partiallyUpdatePolicy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (!id) return res.status(400).json({ message: "Policy ID is required." });
+
+    const policy = await Policy.findById(id);
+    if (!policy) {
+      return res.status(404).json({ message: "Policy not found." });
+    }
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined && key !== "_id") {
+        if (key === "title") {
+          policy.slug = slugify(value, { lower: true, strict: true });
+        }
+        policy[key] = value;
+      }
+    }
+
+    policy.updatedBy = req.user._id;
+    await policy.save();
+
+    return res.status(200).json({
+      message: "✅ Policy partially updated successfully.",
+      data: policy,
+    });
+  } catch (error) {
+    console.error("❌ Error partially updating policy:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/** 🗑️ Delete Policy */
+export const destroyPolicyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "Policy ID is required." });
+
+    const policy = await Policy.findById(id);
+    if (!policy) {
+      return res.status(404).json({ message: "Policy not found." });
+    }
+
     await Policy.findByIdAndDelete(id);
 
     return res.status(200).json({
-      status: "success",
-      message: `Policy "${policy.title}" deleted successfully.`,
-      data: { id },
+      message: `✅ Policy "${policy.title}" deleted successfully.`,
+      id,
     });
   } catch (error) {
-    console.error("❌ Error while deleting policy:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
+    console.error("❌ Error deleting policy:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/* =====================================================
+   🌐 PUBLIC ROUTES
+===================================================== */
+
+/** 📢 Get All Active Policies (Public) */
+export const getAllActivePolicies = async (req, res) => {
+  try {
+    const policies = await Policy.find({ isActive: true })
+      .select("title slug description")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      message: "✅ Active policies fetched successfully.",
+      count: policies.length,
+      data: policies,
     });
+  } catch (error) {
+    console.error("❌ Error fetching active policies:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
+
+/** 🔍 Get Active Policy by Slug (Public) */
+export const getActivePolicyBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) return res.status(400).json({ message: "Slug is required." });
+
+    const policy = await Policy.findOne({ slug, isActive: true }).lean();
+
+    if (!policy) {
+      return res
+        .status(404)
+        .json({ message: `No active policy found for slug: ${slug}` });
+    }
+
+    return res.status(200).json({
+      message: "✅ Policy fetched successfully.",
+      data: policy,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching policy by slug:", error.message);
+    res.status(500).json({ message: "Internal Error", error: error.message });
   }
 };
