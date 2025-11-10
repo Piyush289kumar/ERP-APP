@@ -15,6 +15,7 @@ import {
   Folder,
   ChartBarStacked,
   Album,
+  FileBadge,
 } from "lucide-react";
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
@@ -88,6 +89,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
+        title: "Policy",
+        url: "/admin/policy",
+        icon: FileBadge,
+        isActive: isActive("/admin/policy"),
+      },
+
+      {
         title: "Categories",
         url: "/admin/category",
         icon: ChartBarStacked,
@@ -112,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: isActive("/admin/settings"),
       },
     ],
-    
+
     navSecondary: [
       { title: "Support", url: "#", icon: LifeBuoy },
       { title: "Feedback", url: "#", icon: Send },

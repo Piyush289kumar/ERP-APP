@@ -13,9 +13,10 @@ export default [
 
         layout("routes/protected/ProtectedLayout.tsx", [
             // ✅ Works fine now
+            ...createCrudRoutes("app-configuration"),
             ...createCrudRoutes("category"),
             ...createCrudRoutes("service"),
-            ...createCrudRoutes("app-configuration"),
+            ...createCrudRoutes("policy"),
 
             // Add other custom routes freely
             //   route("reports", "features/reports/index.tsx"),
@@ -33,12 +34,12 @@ function createCrudRoutes(entity: string): ReturnType<typeof route>[] {
     const basePath = `features/${entity}`;
 
     // 🧠 Special case for single-record modules like app-configuration
-   if (entity === "app-configuration") {
-    return [
-      route(entity, `${basePath}/index.tsx`),
-      route(`${entity}/edit/:id?`, `${basePath}/edit-wrapper.tsx`), // ✅ optional param
-    ];
-  }
+    if (entity === "app-configuration") {
+        return [
+            route(entity, `${basePath}/index.tsx`),
+            route(`${entity}/edit/:id?`, `${basePath}/edit-wrapper.tsx`), // ✅ optional param
+        ];
+    }
 
     // 🧱 Default CRUD pattern
     return [
