@@ -1,3 +1,5 @@
+// frontend/app/utils/auth.ts
+
 // Save token securely
 export const saveToken = (token: string) => {
     if (typeof window === "undefined") return;

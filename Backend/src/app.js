@@ -28,6 +28,7 @@ import testimonialRoutes from "./routes/testimonials.routes.js";
 import serviceRoutes from "./routes/service.routes.js";
 import policyRoutes from "./routes/policy.routes.js";
 import contatUsRoutes from "./routes/contactus.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 // ===============================================
 // 🧠 Environment Config
@@ -107,6 +108,7 @@ app.use(`${routePrefix}/testimonial`, testimonialRoutes);
 app.use(`${routePrefix}/service`, serviceRoutes);
 app.use(`${routePrefix}/policy`, policyRoutes);
 app.use(`${routePrefix}/contact`, contatUsRoutes);
+app.use(`${routePrefix}/upload`, uploadRoutes);
 
 // ===============================================
 // 🩵 Health Check

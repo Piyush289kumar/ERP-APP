@@ -22,7 +22,7 @@ const serviceSchema = new mongoose.Schema(
       required: [true, "Description is required."],
       trim: true,
       minlength: [10, "Description must be at least 10 characters long."],
-      maxlength: [2000, "Description cannot exceed 2000 characters."],
+      maxlength: [20000, "Description cannot exceed 20000 characters."],
     },
 
     thumbnail: {

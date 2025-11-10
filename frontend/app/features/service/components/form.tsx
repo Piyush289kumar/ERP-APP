@@ -24,6 +24,7 @@ import {
   useUpdateServiceMutation,
   useGetServiceByIdQuery,
 } from "../data/serviceApi";
+import { RichTextEditor } from "~/components/crud/RichTextEditor";
 
 // Validation helper
 const validate = (values: any) => {
@@ -42,8 +43,8 @@ const validate = (values: any) => {
     errors.description = "Description is required.";
   else if (values.description.length < 10)
     errors.description = "Description must be at least 10 characters.";
-  else if (values.description.length > 2000)
-    errors.description = "Description cannot exceed 2000 characters.";
+  else if (values.description.length > 20000)
+    errors.description = "Description cannot exceed 20000 characters.";
 
   return errors;
 };
@@ -227,21 +228,12 @@ export default function ServiceForm({
 
                 {/* Description */}
                 <div>
-                  <Label className="mb-2">Description</Label>
-                  <Textarea
+                  {/* Description */}
+                  <RichTextEditor
                     value={values.description}
-                    placeholder="Enter service description"
-                    rows={4}
-                    onChange={(e) =>
-                      handleChange("description", e.target.value)
-                    }
-                    className={errors.description ? "border-red-500" : ""}
+                    onChange={(val) => handleChange("description", val)}
+                    error={errors.description}
                   />
-                  {errors.description && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.description}
-                    </p>
-                  )}
                 </div>
               </CardContent>
             </Card>

@@ -215,25 +215,65 @@ export const partiallyUpdateService = async (req, res) => {
 };
 
 /**
- * 🟢 Delete Service
+ * 🟢 Delete Service (with Cloudinary Cleanup)
  */
 export const destroyServiceById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // 🧩 Find the service
     const service = await Service.findById(id);
-
-    if (!service)
+    if (!service) {
       return res.status(404).json({ message: "Service not found." });
-
-    if (service.thumbnail) {
-      const publicId = service.thumbnail.split("/").pop().split(".")[0];
-      await destroyFromCloudinary(`service/thumbnail/${publicId}`);
     }
 
+    // 🧹 1️⃣ Delete the thumbnail image from Cloudinary (if exists)
+    if (service.thumbnail) {
+      try {
+        const thumbPublicId = service.thumbnail.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`service/thumbnail/${thumbPublicId}`);
+      } catch (err) {
+        console.warn("⚠️ Failed to delete thumbnail:", err.message);
+      }
+    }
+
+    // 🧹 2️⃣ Delete embedded images from description (Cloudinary editor-images)
+    if (service.description) {
+      const regex = /https:\/\/res\.cloudinary\.com\/[^"]+\/upload\/[^"]+/g;
+      const imageUrls = service.description.match(regex) || [];
+
+      for (const url of imageUrls) {
+        try {
+          // Extract Cloudinary public_id (everything after `/upload/`)
+          const parts = url.split("/");
+          const uploadIndex = parts.indexOf("upload");
+          if (uploadIndex !== -1) {
+            const publicId = parts
+              .slice(uploadIndex + 1)
+              .join("/")
+              .split(".")[0];
+            if (publicId) {
+              await destroyFromCloudinary(publicId);
+              console.log(`🗑️ Deleted embedded image: ${publicId}`);
+            }
+          }
+        } catch (err) {
+          console.warn("⚠️ Failed to delete embedded image:", err.message);
+        }
+      }
+    }
+
+    // 🗑️ 3️⃣ Delete the service record itself
     await Service.findByIdAndDelete(id);
 
-    res.status(200).json({ message: "Service deleted successfully." });
+    res.status(200).json({
+      message: "Service and all associated images deleted successfully.",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal Error", error: error.message });
+    console.error("❌ Error deleting service:", error.message);
+    res.status(500).json({
+      message: "Internal Error",
+      error: error.message,
+    });
   }
 };

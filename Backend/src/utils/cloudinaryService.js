@@ -13,7 +13,14 @@ export const uploadToCloudinary = async (
     const result = await cloudinary.uploader.upload(filePath, {
       folder,
       resource_type: "auto", // auto-detect image/video/pdf
-      transformation: [{ quality: "auto", fetch_format: "auto" }], // optimize
+      transformation: [
+        {
+          width: 1200, // ✅ Resize large images down to 1200px wide (maintain aspect ratio)
+          crop: "limit", // ✅ Prevent upscaling (only shrink if larger)
+          quality: "auto", // ✅ Auto-optimize compression
+          fetch_format: "auto", // ✅ Serve WebP/AVIF automatically
+        },
+      ], // optimize
     });
 
     // Auto Delete temp file after successful upload
