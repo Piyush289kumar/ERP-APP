@@ -67,6 +67,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
+        // ✅ NEW COLLAPSIBLE GROUP
+        title: "App Configuration",
+        url: "/admin/app-configuration",
+        icon: Bot,
+        isActive: isActive("/admin/app-configuration"),
+        items: [
+          {
+            title: "General Settings",
+            url: "/admin/app-configuration/general",
+          },
+          {
+            title: "Social Links",
+            url: "/admin/app-configuration/social",
+          },
+          {
+            title: "App Store Links",
+            url: "/admin/app-configuration/app-links",
+          },
+        ],
+      },
+      {
         title: "Categories",
         url: "/admin/category",
         icon: ChartBarStacked,
@@ -91,6 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: isActive("/admin/settings"),
       },
     ],
+    
     navSecondary: [
       { title: "Support", url: "#", icon: LifeBuoy },
       { title: "Feedback", url: "#", icon: Send },

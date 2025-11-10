@@ -1,4 +1,35 @@
 import appConfig from "../models/appConfig.model.js";
+
+/**
+ * 🔓 Get latest App Config (Public)
+ */
+export const getPublicAppConfig = async (req, res) => {
+  try {
+    const latestConfig = await appConfig
+      .findOne()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!latestConfig) {
+      return res.status(404).json({ message: "App Config not found." });
+    }
+
+    return res.status(200).json({
+      message: "Public App Config fetched successfully.",
+      data: latestConfig,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching public app config:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+/**
+ * 🔓 Get latest App Config (Protected)
+ */
+
 // Get
 export const getAppConfig = async (req, res) => {
   try {
