@@ -1,43 +1,43 @@
-import Router from "express";
-import {
-  destroyTestimonialById,
-  getAllActiveTestimonials,
-  getAllTestimonials,
-  getTestimonialById,
-  modifyTestimonial,
-} from "../controllers/testimonial.controller.js";
+import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
 import upload from "../config/multer.js";
+import {
+  createTestimonial,
+  getTestimonials,
+  getTestimonialById,
+  updateTestimonial,
+  partiallyUpdateTestimonial,
+  destroyTestimonialById,
+} from "../controllers/testimonial.controller.js";
 
 const router = Router();
 
-/* ================================
-   🟢 Public Routes (No Auth Required)
-   ================================ */
+// ✅ Get all testimonials (paginated)
+router.get("/", ensureAuth, getTestimonials);
 
-// ✅ Get all active testimonials (public site)
-router.get("/", getAllActiveTestimonials);
+// ✅ Get testimonial by ID
+router.get("/:id", ensureAuth, getTestimonialById);
 
-// ✅ Get testimonial by ID (public)
-router.get("/view/:id", getTestimonialById);
-
-
-/* ================================
-   🔒 Admin-Protected Routes
-   ================================ */
-
-// ⚠️ Note: Placed before dynamic routes to avoid `/all` -> ObjectId errors
-router.get("/admin/all", ensureAuth, getAllTestimonials);
-
-// ✅ Create or update testimonial (with optional avatar upload)
+// ✅ Create testimonial (with avatar upload)
 router.post(
-  "/admin/save",
+  "/",
   ensureAuth,
   upload.fields([{ name: "avatar", maxCount: 1 }]),
-  modifyTestimonial
+  createTestimonial
 );
 
-// ✅ Delete testimonial by ID
-router.delete("/admin/:id", ensureAuth, destroyTestimonialById);
+// ✅ Update testimonial (with avatar upload)
+router.put(
+  "/:id",
+  ensureAuth,
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  updateTestimonial
+);
+
+// ✅ Partially update testimonial (toggle isActive, etc.)
+router.patch("/:id", ensureAuth, partiallyUpdateTestimonial);
+
+// ✅ Delete testimonial
+router.delete("/:id", ensureAuth, destroyTestimonialById);
 
 export default router;
