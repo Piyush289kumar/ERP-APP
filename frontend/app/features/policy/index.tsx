@@ -1,4 +1,5 @@
 // app/features/policy/index.tsx
+
 "use client";
 
 import React from "react";
@@ -9,7 +10,7 @@ import {
   useGetPoliciesQuery,
   usePartiallyUpdatePolicyMutation,
   useDeletePolicyMutation,
-} from "./data/policyApi";
+} from "~/features/policy/data/policyApi";
 import { DataTable, BulkActions } from "@/components/crud";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";

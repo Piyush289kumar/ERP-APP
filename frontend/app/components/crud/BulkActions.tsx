@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // ✅ Import all multi-delete dialogs
 import { CategoryMultiDeleteDialog } from "~/features/category/components/category-multi-delete-dialog";
 import { ServiceMultiDeleteDialog } from "~/features/service/components/service-multi-delete-dialog";
+import { PolicyMultiDeleteDialog } from "~/features/policy/components/policy-multi-delete-dialog";
 // You can add more in the future like:
 // import { UserMultiDeleteDialog } from "~/features/user/components/user-multi-delete-dialog";
 
@@ -45,6 +46,15 @@ export function BulkActions<TData>({
       case "category":
         return (
           <CategoryMultiDeleteDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+            table={table}
+          />
+        );
+
+      case "policy":
+        return (
+          <PolicyMultiDeleteDialog
             open={showDeleteConfirm}
             onOpenChange={setShowDeleteConfirm}
             table={table}

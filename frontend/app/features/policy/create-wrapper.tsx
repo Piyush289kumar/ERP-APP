@@ -1,6 +1,6 @@
-// app/features/service/create-wrapper.tsx
-import ServiceForm from "~/features/service/components/form";
+// app/features/policy/create-wrapper.tsx
+import PolicyForm from "~/features/policy/components/form";
 
-export default function CreateCategory() {
-  return <ServiceForm mode="create" />;
+export default function createPolicy() {
+  return <PolicyForm mode="create" />;
 }

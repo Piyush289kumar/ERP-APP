@@ -204,7 +204,7 @@ export default function ServicePage() {
       </div>
 
       {/* BULK ACTIONS */}
-      {tableInstance && <BulkActions table={tableInstance} entityName="service" />}
+      {tableInstance && <BulkActions table={tableInstance} entityName="policy" />}
 
       {/* DATA TABLE */}
       <DataTable

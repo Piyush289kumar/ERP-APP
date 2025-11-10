@@ -1,4 +1,4 @@
-// app/features/service/components/form.tsx
+// app/features/policy/components/form.tsx
 
 "use client";
 
@@ -15,29 +15,27 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { ImageIcon, UploadIcon, XIcon, Loader2 } from "lucide-react";
-import { useFileUpload } from "@/hooks/use-file-upload";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  useCreateServiceMutation,
-  useUpdateServiceMutation,
-  useGetServiceByIdQuery,
+  useCreatePolicyMutation,
+  useUpdatePolicyMutation,
+  useGetPolicyByIdQuery,
 } from "../data/policyApi";
 import { RichTextEditor } from "~/components/crud/RichTextEditor";
 
-// Validation helper
+/* -------------------------------------------------------------------------- */
+/* 🧩 Validation Helper */
+/* -------------------------------------------------------------------------- */
 const validate = (values: any) => {
   const errors: Record<string, string> = {};
 
   if (!values.title.trim()) errors.title = "Title is required.";
   else if (values.title.length < 3)
     errors.title = "Title must be at least 3 characters.";
-  else if (values.title.length > 100)
-    errors.title = "Title cannot exceed 100 characters.";
-
-  if (values.subHeading && values.subHeading.length > 300)
-    errors.subHeading = "Subheading cannot exceed 300 characters.";
+  else if (values.title.length > 150)
+    errors.title = "Title cannot exceed 150 characters.";
 
   if (!values.description.trim())
     errors.description = "Description is required.";
@@ -49,7 +47,10 @@ const validate = (values: any) => {
   return errors;
 };
 
-export default function ServiceForm({
+/* -------------------------------------------------------------------------- */
+/* 🧾 Policy Form Component */
+/* -------------------------------------------------------------------------- */
+export default function PolicyForm({
   mode = "create",
 }: {
   mode?: "create" | "edit";
@@ -59,17 +60,18 @@ export default function ServiceForm({
   const isEdit = mode === "edit" || !!id;
 
   // ✅ API Hooks
-  const { data: serviceData, isLoading: loadingService } =
-    useGetServiceByIdQuery(id ?? "", { skip: !isEdit });
-  const [createService] = useCreateServiceMutation();
-  const [updateService] = useUpdateServiceMutation();
+  const { data: policyData, isLoading: loadingPolicy } = useGetPolicyByIdQuery(
+    id ?? "",
+    { skip: !isEdit }
+  );
+  const [createPolicy] = useCreatePolicyMutation();
+  const [updatePolicy] = useUpdatePolicyMutation();
 
   // ✅ Local State
   const [values, setValues] = useState({
     title: "",
-    subHeading: "",
+    slug: "",
     description: "",
-    thumbnail: null as string | null,
     isActive: true,
   });
 
@@ -78,35 +80,28 @@ export default function ServiceForm({
 
   // ✅ Prefill for Edit Mode
   useEffect(() => {
-    if (serviceData?.data) {
-      const s = serviceData.data;
+    if (policyData?.data) {
+      const p = policyData.data;
       setValues({
-        title: s.title || "",
-        subHeading: s.subHeading || "",
-        description: s.description || "",
-        thumbnail: s.thumbnail || null,
-        isActive: s.isActive ?? true,
+        title: p.title || "",
+        slug: p.slug || "",
+        description: p.description || "",
+        isActive: p.isActive ?? true,
       });
     }
-  }, [serviceData]);
+  }, [policyData]);
 
-  // ✅ File Upload (Thumbnail)
-  const [
-    { files: thumbFiles, isDragging: thumbDrag, errors: thumbErrors },
-    thumbHandlers,
-  ] = useFileUpload({ accept: "image/*", maxSize: 2 * 1024 * 1024 });
-
-  const thumbPreview = thumbFiles?.[0]?.preview || values.thumbnail || null;
-
+  // ✅ Handle Input Changes
   const handleChange = (name: string, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // ✅ Submit Handler
+  /* -------------------------------------------------------------------------- */
+  /* 🧭 Submit Handler */
+  /* -------------------------------------------------------------------------- */
   const handleSubmit = async (e: React.FormEvent, actionType = "save") => {
     e.preventDefault();
-
     const newErrors = validate(values);
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -115,35 +110,31 @@ export default function ServiceForm({
     }
 
     setIsSubmitting(true);
-
     try {
-      const formData = new FormData();
-      formData.append("title", values.title.trim());
-      formData.append("subHeading", values.subHeading.trim());
-      formData.append("description", values.description.trim());
-      formData.append("isActive", String(values.isActive));
-
-      if (thumbFiles.length > 0)
-        formData.append("thumbnail", thumbFiles[0].file as Blob);
+      const payload = {
+        title: values.title.trim(),
+        slug: values.slug.trim(),
+        description: values.description.trim(),
+        isActive: values.isActive,
+      };
 
       if (isEdit) {
         if (!id) {
-          toast.error("Missing service ID for update.");
+          toast.error("Missing policy ID for update.");
           setIsSubmitting(false);
           return;
         }
-        await updateService({ id, formData }).unwrap();
-        toast.success("✅ Service updated successfully!");
+        await updatePolicy({ id, data: payload }).unwrap();
+        toast.success("Policy updated successfully!");
       } else {
-        await createService(formData).unwrap();
-        toast.success("✅ Service created successfully!");
+        await createPolicy(payload).unwrap();
+        toast.success("Policy created successfully!");
 
         if (actionType === "create_another") {
           setValues({
             title: "",
-            subHeading: "",
+            slug: "",
             description: "",
-            thumbnail: null,
             isActive: true,
           });
           setErrors({});
@@ -151,7 +142,7 @@ export default function ServiceForm({
         }
       }
 
-      navigate("/admin/service");
+      navigate("/admin/policy");
     } catch (err: any) {
       toast.error(err?.data?.message || "❌ Operation failed.");
     } finally {
@@ -159,29 +150,33 @@ export default function ServiceForm({
     }
   };
 
-  // ✅ Loader for Edit Mode
-  if (loadingService && isEdit) {
+  /* -------------------------------------------------------------------------- */
+  /* 🌀 Loader for Edit Mode */
+  /* -------------------------------------------------------------------------- */
+  if (loadingPolicy && isEdit) {
     return (
       <div className="flex justify-center items-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <span className="ml-2 text-sm text-muted-foreground">
-          Loading service details...
+          Loading policy details...
         </span>
       </div>
     );
   }
 
-  // ✅ Form UI
+  /* -------------------------------------------------------------------------- */
+  /* 🧱 Form UI */
+  /* -------------------------------------------------------------------------- */
   return (
     <div className="p-6 w-full mx-auto space-y-8">
       <header>
         <h1 className="text-3xl font-semibold">
-          {isEdit ? "Edit Service" : "Create Service"}
+          {isEdit ? "Edit Policy" : "Create Policy"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {isEdit
-            ? "Update existing service details below."
-            : "Fill out the form to create a new service."}
+            ? "Update existing policy details below."
+            : "Fill out the form to create a new policy."}
         </p>
       </header>
 
@@ -191,8 +186,8 @@ export default function ServiceForm({
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Main Information</CardTitle>
-                <CardDescription>Enter the service details</CardDescription>
+                <CardTitle>Policy Information</CardTitle>
+                <CardDescription>Enter policy details below</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 {/* Title */}
@@ -200,8 +195,7 @@ export default function ServiceForm({
                   <Label className="mb-2">Title</Label>
                   <Input
                     value={values.title}
-                    placeholder="Enter service title"
-                    required={true}
+                    placeholder="Enter policy title"
                     onChange={(e) => handleChange("title", e.target.value)}
                     className={errors.title ? "border-red-500" : ""}
                   />
@@ -210,25 +204,21 @@ export default function ServiceForm({
                   )}
                 </div>
 
-                {/* Subheading */}
+                {/* Slug */}
                 <div>
-                  <Label className="mb-2">Sub Heading</Label>
+                  <Label className="mb-2">Slug (optional)</Label>
                   <Input
-                    value={values.subHeading}
-                    placeholder="Enter sub heading (optional)"
-                    onChange={(e) => handleChange("subHeading", e.target.value)}
-                    className={errors.subHeading ? "border-red-500" : ""}
+                    value={values.slug}
+                    placeholder="auto-generated-from-title"
+                    onChange={(e) => handleChange("slug", e.target.value)}
                   />
-                  {errors.subHeading && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.subHeading}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Leave blank to auto-generate from title.
+                  </p>
                 </div>
 
                 {/* Description */}
                 <div>
-                  {/* Description */}
                   <RichTextEditor
                     value={values.description}
                     onChange={(val) => handleChange("description", val)}
@@ -255,67 +245,6 @@ export default function ServiceForm({
                     onCheckedChange={(v) => handleChange("isActive", v)}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* THUMBNAIL UPLOAD */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Thumbnail</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  onDragEnter={thumbHandlers.handleDragEnter}
-                  onDragLeave={thumbHandlers.handleDragLeave}
-                  onDragOver={thumbHandlers.handleDragOver}
-                  onDrop={thumbHandlers.handleDrop}
-                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${
-                    thumbDrag ? "bg-accent border-primary" : "border-border"
-                  }`}
-                >
-                  <input
-                    {...thumbHandlers.getInputProps()}
-                    className="sr-only"
-                  />
-                  {thumbPreview ? (
-                    <div className="relative w-full h-48">
-                      <img
-                        src={thumbPreview}
-                        alt="Thumbnail Preview"
-                        className="object-cover h-full w-full rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (thumbFiles.length > 0)
-                            thumbHandlers.removeFile(thumbFiles[0]?.id);
-                          setValues((p) => ({ ...p, thumbnail: null }));
-                        }}
-                        className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-full hover:bg-black/80"
-                      >
-                        <XIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center text-center">
-                      <ImageIcon className="h-6 w-6 opacity-70 mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Drop or select an image
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-2"
-                        onClick={thumbHandlers.openFileDialog}
-                      >
-                        <UploadIcon className="h-4 w-4 mr-2" /> Select Image
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                {thumbErrors[0] && (
-                  <p className="text-xs text-red-500 mt-1">{thumbErrors[0]}</p>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -370,7 +299,7 @@ export default function ServiceForm({
             variant="outline"
             type="button"
             disabled={isSubmitting}
-            onClick={() => navigate("/admin/service")}
+            onClick={() => navigate("/admin/policy")}
           >
             Cancel
           </Button>

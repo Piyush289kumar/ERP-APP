@@ -1,4 +1,5 @@
-// app/features/service/components/service-multi-delete-dialog.tsx
+// app/features/policy/components/policy-multi-delete-dialog.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -9,9 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useDeleteServiceMutation } from "../data/policyApi"; // ✅ Correct hook for services
+import { useDeletePolicyMutation } from "../data/policyApi"; // ✅ Correct hook for policies
 
-type ServiceMultiDeleteDialogProps<TData> = {
+type PolicyMultiDeleteDialogProps<TData> = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   table: Table<TData>;
@@ -19,14 +20,14 @@ type ServiceMultiDeleteDialogProps<TData> = {
 
 const CONFIRM_WORD = "DELETE";
 
-export function ServiceMultiDeleteDialog<TData>({
+export function PolicyMultiDeleteDialog<TData>({
   open,
   onOpenChange,
   table,
-}: ServiceMultiDeleteDialogProps<TData>) {
+}: PolicyMultiDeleteDialogProps<TData>) {
   const [value, setValue] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteService] = useDeleteServiceMutation();
+  const [deletePolicy] = useDeletePolicyMutation();
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedItems = selectedRows.map((row) => row.original as any);
@@ -38,7 +39,7 @@ export function ServiceMultiDeleteDialog<TData>({
     }
 
     if (selectedItems.length === 0) {
-      toast.error("No services selected.");
+      toast.error("No policies selected.");
       return;
     }
 
@@ -47,23 +48,23 @@ export function ServiceMultiDeleteDialog<TData>({
 
       await toast.promise(
         Promise.all(
-          selectedItems.map((item) => deleteService(item._id).unwrap())
+          selectedItems.map((item) => deletePolicy(item._id).unwrap())
         ),
         {
-          loading: "Deleting selected services...",
+          loading: "Deleting selected policies...",
           success: () => {
             table.resetRowSelection();
             onOpenChange(false);
-            return `Deleted ${selectedItems.length} service${
-              selectedItems.length > 1 ? "s" : ""
+            return `Deleted ${selectedItems.length} polic${
+              selectedItems.length > 1 ? "ies" : "y"
             } successfully.`;
           },
-          error: "Failed to delete one or more services.",
+          error: "Failed to delete one or more policies.",
         }
       );
     } catch (error: any) {
-      console.error("Service deletion failed:", error);
-      toast.error("Something went wrong while deleting services.");
+      console.error("❌ Policy deletion failed:", error);
+      toast.error("Something went wrong while deleting policies.");
     } finally {
       setIsDeleting(false);
     }
@@ -90,15 +91,15 @@ export function ServiceMultiDeleteDialog<TData>({
         <span className="text-destructive font-semibold flex items-center">
           <AlertTriangle className="stroke-destructive me-2" size={18} />
           Delete {selectedItems.length}{" "}
-          {selectedItems.length > 1 ? "Services" : "Service"}
+          {selectedItems.length > 1 ? "Policies" : "Policy"}
         </span>
       }
       desc={
         <div className="space-y-4">
           <p className="leading-relaxed">
             Are you sure you want to permanently delete{" "}
-            <strong>{selectedItems.length}</strong> service
-            {selectedItems.length > 1 ? "s" : ""}? <br />
+            <strong>{selectedItems.length}</strong> polic
+            {selectedItems.length > 1 ? "ies" : "y"}? <br />
             This action <strong>cannot</strong> be undone.
           </p>
 

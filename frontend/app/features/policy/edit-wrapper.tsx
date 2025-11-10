@@ -1,6 +1,6 @@
-// app/features/service/edit-wrapper.tsx
-import ServiceForm from "~/features/service/components/form";
+// app/features/policy/edit-wrapper.tsx
+import PolicyForm from "~/features/policy/components/form";
 
-export default function EditCategory() {
-  return <ServiceForm mode="edit" />;
+export default function EditPolicy() {
+  return <PolicyForm mode="edit" />;
 }
