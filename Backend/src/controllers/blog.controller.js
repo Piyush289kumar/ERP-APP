@@ -1,253 +1,321 @@
 import slugify from "slugify";
-import Blog from "../models/blogs/blog.model.js";
+import Blog from "../models/blog.model.js";
 import {
-  destroyFromCloudinary,
   uploadToCloudinary,
+  destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
 
-// Fetch all blogs (with filters, pagination, and search)
-export const getAllBlogs = async (req, res) => {
+/* ================================
+   🟢 PUBLIC CONTROLLERS
+   ================================ */
+
+/**
+ * @desc Get all active blogs (public)
+ * @route GET /api/v1/blog?page=1&limit=10&search=&sortBy=createdAt&sortOrder=desc
+ */
+export const getAllActiveBlogs = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", category, isActive } = req.query;
-    const query = {};
-    if (category) query.category = category;
-    if (isActive !== undefined) query.isActive = isActive === "true";
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search?.trim() || "";
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const skip = (page - 1) * limit;
 
-    // Text Search (on Title, Description, MetaKeywords)
-    if (search) query.$text = { $search: search };
+    const filter = { isActive: true };
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
 
-    const blogs = await Blog.find(query)
+    const total = await Blog.countDocuments(filter);
+    const blogs = await Blog.find(filter)
       .populate("category", "name slug")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    const total = await Blog.countDocuments(query);
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     res.status(200).json({
-      message: "Blogs fetched successfully.",
+      success: true,
+      message: "Active blogs fetched successfully.",
+      data: blogs,
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(total / limit),
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      data: blogs,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error fetching active blogs:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-// Fetch all featured blogs
-
-export const getAllFeatureBlogs = async (req, res) => {
-  try {
-    const blogs = await Blog.find({ isFeature: true, isActive: true })
-      .populate("category", "name slug")
-      .sort({ createdAt: -1 })
-      .limit(10);
-
-    if (!blogs.length) {
-      return res.status(404).json({ message: "No featured blogs found." });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Featured blogs fetched successfully.", data: blogs });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
-  }
-};
-
-// Get a single blog by slug
+/**
+ * @desc Get single blog by slug (public)
+ * @route GET /api/v1/blog/:slug
+ */
 export const getBlogBySlug = async (req, res) => {
   try {
-    const { slug } = req.params;
-    const blog = await Blog.findOne({ slug })
+    const blog = await Blog.findOne({ slug: req.params.slug })
       .populate("category", "name slug")
-      .populate("createdBy", "name email");
+      .lean();
 
-    if (!blog) {
-      return res.status(404).json({ message: "Blog not found." });
-    }
+    if (!blog)
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
 
-    return res.status(200).json({ message: "Blog fetched successfully.", data: blog });
+    res.status(200).json({
+      success: true,
+      message: "Blog fetched successfully.",
+      data: blog,
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error fetching blog:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-// Create or Update a blog (by ID if exists)
+/* ================================
+   🔒 ADMIN CONTROLLERS
+   ================================ */
 
-export const modifyBlogBySlug = async (req, res) => {
+/**
+ * @desc Get all blogs (admin, paginated + search + sort)
+ * @route GET /api/v1/blog/admin/all
+ */
+export const getAllBlogs = async (req, res) => {
   try {
-    const {
-      id,
-      title,
-      category,
-      thumbnail,
-      gallery_images,
-      video_link,
-      read_time,
-      short_description,
-      description,
-      seo,
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search?.trim() || "";
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { "seo.metaKeywords": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const total = await Blog.countDocuments(filter);
+    const blogs = await Blog.find(filter)
+      .populate("category", "name slug")
+      .populate("createdBy updatedBy", "name email")
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Blogs fetched successfully.",
+      data: blogs,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching blogs:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+/**
+ * @desc Create new blog
+ * @route POST /api/v1/blog/admin
+ */
+export const createBlog = async (req, res) => {
+  try {
+    const { title, category, isActive = true, isFeature = false } = req.body;
+    if (!title?.trim())
+      return res
+        .status(400)
+        .json({ success: false, message: "Title is required." });
+
+    const slug = slugify(title, { lower: true, strict: true });
+    const existing = await Blog.findOne({ slug });
+    if (existing)
+      return res
+        .status(400)
+        .json({ success: false, message: "Blog already exists." });
+
+    let thumbnailUrl = null;
+    if (req.files?.thumbnail?.[0]?.path) {
+      const upload = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "blog/thumbnails"
+      );
+      thumbnailUrl = upload.secure_url;
+    }
+
+    const galleryImages = [];
+    if (req.files?.gallery_images?.length) {
+      for (const file of req.files.gallery_images) {
+        const upload = await uploadToCloudinary(file.path, "blog/gallery");
+        galleryImages.push(upload.secure_url);
+      }
+    }
+
+    const blog = await Blog.create({
+      title: title.trim(),
+      slug,
+      category: category || null,
+      thumbnail: thumbnailUrl,
+      gallery_images: galleryImages,
       isActive,
       isFeature,
-    } = req.body;
+      createdBy: req.user._id,
+    });
 
-    if (!title) {
-      return res.status(400).json({ message: "Title is required." });
-    }
-
-    // Generate Slug via Blog Title if Slug is missing
-    const slug = slugify(title, { lower: true, strict: true });
-
-    // Check if Blog already exists when Creating new
-    if (!id) {
-      const existing = await Blog.findOne({ slug });
-      if (existing) {
-        return res
-          .status(400)
-          .json({ message: "Blog with this name already exits." });
-      }
-    }
-
-    let blog;
-    let thumbnailUrl = null;
-    let galleryUrls = [];
-
-    // Upload thumbnail if provided
-    if (req.files?.thumbnail?.[0]?.path) {
-      const uploadThumb = await uploadToCloudinary(
-        req.files.thumbnail[0].path,
-        "blogs/thumbnails"
-      );
-      thumbnailUrl = uploadThumb.secure_url;
-    }
-
-    // Upload multiple gallery images
-    if (req.files?.gallery_images) {
-      const uploadPromises = req.files.gallery_images.map((file) =>
-        uploadToCloudinary(file.path, "blogs/gallery")
-      );
-
-      const uploadedGallery = await Promise.all(uploadPromises);
-      galleryUrls = uploadedGallery.map((img) => img.secure_url);
-    }
-
-    // If `id` exists -> Update Blog
-    if (id) {
-      blog = await Blog.findById(id);
-
-      if (!blog) {
-        return res.status(404).json({ message: "Blog is not found." });
-      }
-
-      // If New thumbnail uploaded, delete old one
-
-      if (thumbnailUrl && blog.thumbnail) {
-        const oldPublicId = blog.thumbnail.split("/").pop().split(".")[0];
-        await destroyFromCloudinary(`blogs/thumbnails/${oldPublicId}`);
-      }
-
-      // Update Fields
-      blog.title = title || blog.title;
-      blog.slug = slug || blog.slug;
-      blog.description = description || blog.description;
-      blog.category = category || blog.category;
-      blog.thumbnail = thumbnailUrl || blog.thumbnail;
-      blog.gallery_images = galleryUrls.length
-        ? galleryUrls
-        : blog.gallery_images;
-      blog.video_link = video_link || blog.video_link;
-      blog.read_time = read_time || blog.read_time;
-      blog.short_description = short_description || blog.short_description;
-      blog.description = description || blog.description;
-      blog.seo = seo || blog.seo;
-      blog.isActive = isActive ?? blog.isActive;
-      blog.isFeature = isFeature ?? blog.isFeature;
-      blog.updatedBy = req.user._id;
-
-      await blog.save();
-
-      return res.status(200).json({
-        message: "Blog updated successfully.",
-        blog,
-      });
-    } else {
-      // Else -> Create a New Category
-
-      blog = await Blog.create({
-        title,
-        slug,
-        category,
-        thumbnail: thumbnailUrl,
-        gallery_images: galleryUrls,
-        video_link,
-        read_time,
-        short_description,
-        description,
-        seo,
-        isActive,
-        isFeature,
-        createdBy: req.user._id,
-      });
-
-      return res.status(201).json({
-        message: "Blog created successfully.",
-        blog,
-      });
-    }
+    res.status(201).json({
+      success: true,
+      message: "Blog created successfully.",
+      data: blog,
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error creating blog:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-// Delete blog by slug
+/**
+ * @desc Update blog (PUT)
+ * @route PUT /api/v1/blog/admin/:slug
+ */
+export const updateBlog = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { title, category, isActive, isFeature } = req.body;
 
+    const blog = await Blog.findOne({ slug });
+    if (!blog)
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+
+    // Handle thumbnail
+    if (req.files?.thumbnail?.[0]?.path) {
+      if (blog.thumbnail) {
+        const oldPublicId = blog.thumbnail.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`blog/thumbnails/${oldPublicId}`);
+      }
+      const upload = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "blog/thumbnails"
+      );
+      blog.thumbnail = upload.secure_url;
+    }
+
+    // Handle gallery images
+    if (req.files?.gallery_images?.length) {
+      for (const img of blog.gallery_images || []) {
+        const oldId = img.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`blog/gallery/${oldId}`);
+      }
+
+      const uploads = [];
+      for (const file of req.files.gallery_images) {
+        const upload = await uploadToCloudinary(file.path, "blog/gallery");
+        uploads.push(upload.secure_url);
+      }
+      blog.gallery_images = uploads;
+    }
+
+    if (title) {
+      blog.title = title.trim();
+      blog.slug = slugify(title, { lower: true, strict: true });
+    }
+
+    blog.category = category || blog.category;
+    blog.isActive = typeof isActive !== "undefined" ? isActive : blog.isActive;
+    blog.isFeature =
+      typeof isFeature !== "undefined" ? isFeature : blog.isFeature;
+    blog.updatedBy = req.user._id;
+
+    await blog.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Blog updated successfully.",
+      data: blog,
+    });
+  } catch (error) {
+    console.error("Error updating blog:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+/**
+ * @desc Partial update blog
+ * @route PATCH /api/v1/blog/admin/:slug
+ */
+export const partiallyUpdateBlog = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const updates = req.body;
+
+    const blog = await Blog.findOne({ slug });
+    if (!blog)
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val !== undefined && key !== "_id") blog[key] = val;
+    });
+
+    blog.updatedBy = req.user._id;
+    await blog.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Blog partially updated.", data: blog });
+  } catch (error) {
+    console.error("Error partially updating blog:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+/**
+ * @desc Delete blog by slug
+ * @route DELETE /api/v1/blog/admin/:slug
+ */
 export const destroyBlogBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    if (!slug || typeof slug !== "string") {
-      return res.status(400).json({ message: "Valid slug is required." });
-    }
-
     const blog = await Blog.findOne({ slug });
-    if (!blog) {
+    if (!blog)
       return res
         .status(404)
-        .json({ message: `No blog found with slug: ${slug}.` });
-    }
+        .json({ success: false, message: "Blog not found" });
 
-    // Delete Cloudinary files
     if (blog.thumbnail) {
-      const publicId = blog.thumbnail.split("/").pop().split(".")[0];
-      await destroyFromCloudinary(`blogs/thumbnails/${publicId}`);
+      const id = blog.thumbnail.split("/").pop().split(".")[0];
+      await destroyFromCloudinary(`blog/thumbnails/${id}`);
     }
 
     if (blog.gallery_images?.length) {
-      const deletePromises = blog.gallery_images.map((img) => {
-        const publicId = img.split("/").pop().split(".")[0];
-        return destroyFromCloudinary(`blogs/gallery/${publicId}`);
-      });
-      await Promise.all(deletePromises);
+      for (const img of blog.gallery_images) {
+        const id = img.split("/").pop().split(".")[0];
+        await destroyFromCloudinary(`blog/gallery/${id}`);
+      }
     }
 
-    await Blog.findByIdAndDelete(blog._id);
+    await Blog.deleteOne({ slug });
 
-    return res.status(200).json({ message: "Blog delete successfully.", slug });
+    res
+      .status(200)
+      .json({ success: true, message: "Blog deleted successfully.", slug });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error deleting blog:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
