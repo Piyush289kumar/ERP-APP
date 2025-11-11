@@ -9,6 +9,10 @@ import { appConfigurationApi } from "~/features/app-configuration/data/appConfig
 // 🧍 Existing
 import userReducer from "~/features/user/userSlice";
 
+// 🗂 Blog Feature
+import blogReducer from "~/features/blog/data/blogSlice";
+import { blogApi } from "~/features/blog/data/blogApi";
+
 // 🗂 Category Feature
 import categoryReducer from "~/features/category/data/categorySlice";
 import { categoryApi } from "~/features/category/data/categoryApi";
@@ -38,6 +42,11 @@ export const store = configureStore({
     // ✅ User state
     user: userReducer,
 
+    // ✅ Blog state + API
+    blog: blogReducer,
+    [blogApi.reducerPath]: blogApi.reducer,
+
+
     // ✅ Category state + API
     category: categoryReducer,
     [categoryApi.reducerPath]: categoryApi.reducer,
@@ -63,6 +72,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       appConfigurationApi.middleware,
+      blogApi.middleware,
       categoryApi.middleware,
       serviceApi.middleware,
       policyApi.middleware,

@@ -14,6 +14,7 @@ export default [
         layout("routes/protected/ProtectedLayout.tsx", [
             // ✅ Works fine now
             ...createCrudRoutes("app-configuration"),
+            ...createCrudRoutes("blog"),
             ...createCrudRoutes("category"),
             ...createCrudRoutes("service"),
             ...createCrudRoutes("policy"),
