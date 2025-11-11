@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Table } from "@tanstack/react-table";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +31,14 @@ export function CategoryMultiDeleteDialog<TData>({
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedItems = selectedRows.map((row) => row.original as any);
+
+  // ✅ Reset input + deletion state when dialog opens or closes
+  useEffect(() => {
+    if (!open) {
+      setValue("");
+      setIsDeleting(false);
+    }
+  }, [open]);
 
   const handleDelete = async () => {
     if (value.trim() !== CONFIRM_WORD) {
@@ -85,7 +93,10 @@ export function CategoryMultiDeleteDialog<TData>({
       destructive
       title={
         <span className="text-destructive font-semibold">
-          <AlertTriangle className="stroke-destructive me-1 inline-block" size={18} />{" "}
+          <AlertTriangle
+            className="stroke-destructive me-1 inline-block"
+            size={18}
+          />{" "}
           Delete {selectedItems.length}{" "}
           {selectedItems.length > 1 ? "categories" : "category"}
         </span>
@@ -94,8 +105,8 @@ export function CategoryMultiDeleteDialog<TData>({
         <div className="space-y-4">
           <p>
             Are you sure you want to delete{" "}
-            <strong>{selectedItems.length}</strong>{" "}
-            selected categor{selectedItems.length > 1 ? "ies" : "y"}? <br />
+            <strong>{selectedItems.length}</strong> selected categor
+            {selectedItems.length > 1 ? "ies" : "y"}? <br />
             This action cannot be undone.
           </p>
 

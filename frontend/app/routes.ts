@@ -18,6 +18,7 @@ export default [
             ...createCrudRoutes("service"),
             ...createCrudRoutes("policy"),
             ...createCrudRoutes("testimonial"),
+            ...createCrudRoutes("gallery"),
 
             // Add other custom routes freely
             //   route("reports", "features/reports/index.tsx"),

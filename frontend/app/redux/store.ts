@@ -21,10 +21,13 @@ import { serviceApi } from "~/features/service/data/serviceApi";
 import policyReducer from "~/features/policy/data/policySlice";
 import { policyApi } from "~/features/policy/data/policyApi";
 
-
 // ⚙️  Testimonial Feature
 import testimonialReducer from "~/features/testimonial/data/testimonialSlice";
 import { testimonialApi } from "~/features/testimonial/data/testimonialApi";
+
+// ⚙️  Gallery Feature
+import galleryReducer from "~/features/gallery/data/gallerySlice";
+import { galleryApi } from "~/features/gallery/data/galleryApi";
 
 export const store = configureStore({
   reducer: {
@@ -52,6 +55,10 @@ export const store = configureStore({
     testimonial: testimonialReducer,
     [testimonialApi.reducerPath]: testimonialApi.reducer,
 
+    // ✅ Gallery state + API
+    gallery: galleryReducer,
+    [galleryApi.reducerPath]: galleryApi.reducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -59,7 +66,8 @@ export const store = configureStore({
       categoryApi.middleware,
       serviceApi.middleware,
       policyApi.middleware,
-      testimonialApi.middleware
+      testimonialApi.middleware,
+      galleryApi.middleware,
     ),
 });
 

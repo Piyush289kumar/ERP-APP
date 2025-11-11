@@ -1,4 +1,4 @@
-// app/features/testimonial/components/testimonial-multi-delete-dialog.tsx
+// app/features/gallery/components/gallery-multi-delete-dialog.tsx
 
 "use client";
 
@@ -10,9 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useDeleteTestimonialMutation } from "../data/testimonialApi"; // ✅ Correct hook for testimonials
+import { useDeleteGalleryMutation } from "../data/galleryApi"; // ✅ Correct hook for galleries
 
-type TestimonialMultiDeleteDialogProps<TData> = {
+type GalleryMultiDeleteDialogProps<TData> = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   table: Table<TData>;
@@ -20,14 +20,14 @@ type TestimonialMultiDeleteDialogProps<TData> = {
 
 const CONFIRM_WORD = "DELETE";
 
-export function TestimonialMultiDeleteDialog<TData>({
+export function GalleryMultiDeleteDialog<TData>({
   open,
   onOpenChange,
   table,
-}: TestimonialMultiDeleteDialogProps<TData>) {
+}: GalleryMultiDeleteDialogProps<TData>) {
   const [value, setValue] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteTestimonial] = useDeleteTestimonialMutation();
+  const [deleteGallery] = useDeleteGalleryMutation();
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedItems = selectedRows.map((row) => row.original as any);
@@ -47,7 +47,7 @@ export function TestimonialMultiDeleteDialog<TData>({
     }
 
     if (selectedItems.length === 0) {
-      toast.error("No testimonials selected.");
+      toast.error("No galleries selected.");
       return;
     }
 
@@ -56,23 +56,23 @@ export function TestimonialMultiDeleteDialog<TData>({
 
       await toast.promise(
         Promise.all(
-          selectedItems.map((item) => deleteTestimonial(item._id).unwrap())
+          selectedItems.map((item) => deleteGallery(item._id).unwrap())
         ),
         {
-          loading: "Deleting selected testimonials...",
+          loading: "Deleting selected galleries...",
           success: () => {
             table.resetRowSelection();
             onOpenChange(false);
-            return `Deleted ${selectedItems.length} testimonial${
-              selectedItems.length > 1 ? "s" : ""
+            return `Deleted ${selectedItems.length} gallery${
+              selectedItems.length > 1 ? "ies" : "y"
             } successfully.`;
           },
-          error: "Failed to delete one or more testimonials.",
+          error: "Failed to delete one or more galleries.",
         }
       );
     } catch (error: any) {
-      console.error("❌ Testimonial deletion failed:", error);
-      toast.error("Something went wrong while deleting testimonials.");
+      console.error("❌ Gallery deletion failed:", error);
+      toast.error("Something went wrong while deleting galleries.");
     } finally {
       setIsDeleting(false);
     }
@@ -99,15 +99,15 @@ export function TestimonialMultiDeleteDialog<TData>({
         <span className="text-destructive font-semibold flex items-center">
           <AlertTriangle className="stroke-destructive me-2" size={18} />
           Delete {selectedItems.length}{" "}
-          {selectedItems.length > 1 ? "Testimonials" : "Testimonial"}
+          {selectedItems.length > 1 ? "Galleries" : "Gallery"}
         </span>
       }
       desc={
         <div className="space-y-4">
           <p className="leading-relaxed">
             Are you sure you want to permanently delete{" "}
-            <strong>{selectedItems.length}</strong> testimonial
-            {selectedItems.length > 1 ? "s" : ""}? <br />
+            <strong>{selectedItems.length}</strong> gallery
+            {selectedItems.length > 1 ? "ies" : "y"}? <br />
             This action <strong>cannot</strong> be undone.
           </p>
 

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Table } from "@tanstack/react-table";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +31,13 @@ export function PolicyMultiDeleteDialog<TData>({
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedItems = selectedRows.map((row) => row.original as any);
+  // ✅ Reset input + deletion state when dialog opens or closes
+  useEffect(() => {
+    if (!open) {
+      setValue("");
+      setIsDeleting(false);
+    }
+  }, [open]);
 
   const handleDelete = async () => {
     if (value.trim().toUpperCase() !== CONFIRM_WORD) {
