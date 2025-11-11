@@ -1,5 +1,5 @@
 import slugify from "slugify";
-import Blog from "../models/blog.model.js";
+import Blog from "../models/blogs/blog.model.js";
 import {
   uploadToCloudinary,
   destroyFromCloudinary,

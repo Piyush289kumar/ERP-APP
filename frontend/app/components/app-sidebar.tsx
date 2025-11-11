@@ -18,6 +18,7 @@ import {
   FileBadge,
   UserStar,
   ImageUp,
+  Layers,
 } from "lucide-react";
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
@@ -89,6 +90,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/admin/app-configuration/app-links",
           },
         ],
+      },
+
+       {
+        title: "Blogs",
+        url: "/admin/blog",
+        icon: Layers,
+        isActive: isActive("/admin/blog"),
       },
       {
         title: "Policy",
