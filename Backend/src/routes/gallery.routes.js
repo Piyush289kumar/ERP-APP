@@ -1,7 +1,7 @@
-import Router from "express";
+import { Router } from "express";
 import {
   destroyGalleryById,
-  getAllActiveGallery,  
+  getAllActiveGallery,
   getAllGallery,
   getGalleryById,
   modifyGallery,
@@ -11,18 +11,32 @@ import upload from "../config/multer.js";
 
 const router = Router();
 
-// Public Routes
+/* ================================
+   🟢 Public Routes (No Auth Required)
+   ================================ */
+
+// ✅ Get all galleries (for public view with pagination)
 router.get("/", getAllGallery);
+
+// ✅ Get all active galleries (public only active)
 router.get("/active", getAllActiveGallery);
+
+// ✅ Get single gallery by ID
 router.get("/:id", getGalleryById);
 
-// Protected (Admin/Author) Routes
+/* ================================
+   🔒 Admin-Protected Routes
+   ================================ */
+
+// ✅ Create or Update Gallery (with optional image upload)
 router.post(
-  "/",
+  "/admin/save",
   ensureAuth,
   upload.fields([{ name: "galleryMedia", maxCount: 1 }]),
   modifyGallery
 );
-router.delete("/:id", ensureAuth, destroyGalleryById);
+
+// ✅ Delete Gallery by ID
+router.delete("/admin/:id", ensureAuth, destroyGalleryById);
 
 export default router;
