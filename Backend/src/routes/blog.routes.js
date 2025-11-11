@@ -17,20 +17,15 @@ const router = Router();
    🟢 PUBLIC ROUTES
    ================================ */
 
-// ✅ Get all active blogs (public)
+// ⚠️ Important: Keep dynamic slug route LAST
 router.get("/", getAllActiveBlogs);
-
-// ✅ Get blog details by slug (public)
 router.get("/:slug", getBlogBySlug);
 
 /* ================================
-   🔒 ADMIN ROUTES (Protected)
+   🔒 ADMIN ROUTES
    ================================ */
-
-// ✅ Get all blogs (paginated + search + sort)
 router.get("/admin/all", ensureAuth, getAllBlogs);
 
-// ✅ Create new blog
 router.post(
   "/admin",
   ensureAuth,
@@ -41,7 +36,6 @@ router.post(
   createBlog
 );
 
-// ✅ Update blog (PUT)
 router.put(
   "/admin/:slug",
   ensureAuth,
@@ -52,10 +46,7 @@ router.put(
   updateBlog
 );
 
-// ✅ Partial update (PATCH)
 router.patch("/admin/:slug", ensureAuth, partiallyUpdateBlog);
-
-// ✅ Delete blog
 router.delete("/admin/:slug", ensureAuth, destroyBlogBySlug);
 
 export default router;

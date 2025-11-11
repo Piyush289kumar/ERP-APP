@@ -1,7 +1,41 @@
 // app/routes/blog/data/blogApi.ts - (using RTK Query)
 
+// app/routes/blog/data/blogApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getToken } from "~/utils/auth";
+
+interface PaginationParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+}
+
+interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+interface Blog {
+    _id?: string;
+    title: string;
+    slug?: string;
+    category?: string | null;
+    short_description?: string;
+    description?: string;
+    thumbnail?: string | null;
+    gallery_images?: string[];
+    seo?: {
+        metaTitle?: string;
+        metaDescription?: string;
+        metaKeywords?: string[];
+    };
+    isActive?: boolean;
+    isFeature?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
 
 export const blogApi = createApi({
     reducerPath: "blogApi",
@@ -14,45 +48,36 @@ export const blogApi = createApi({
         },
     }),
     tagTypes: ["Blog"],
-
     endpoints: (builder) => ({
-        /**
-         * 🟢 Public Routes
-         */
-
-        // ✅ Get all active blogs (paginated + searchable)
-        getPublicBlogs: builder.query({
-            query: ({ page = 1, limit = 10, search = "", sortBy = "createdAt", sortOrder = "desc" }) =>
-                `blog?page=${page}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+        /* ------------------ 🟢 PUBLIC ------------------ */
+        getPublicBlogs: builder.query<
+            { data: Blog[]; pagination: PaginationMeta },
+            PaginationParams
+        >({
+            query: ({ page = 1, limit = 10, search = "" }) =>
+                `blog?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
             providesTags: ["Blog"],
         }),
 
-        // ✅ Get single public blog by slug
-        getPublicBlogBySlug: builder.query({
-            query: (slug: string) => `blog/${slug}`,
+        getBlogBySlug: builder.query<{ data: Blog }, string>({
+            query: (slug) => `blog/${slug}`,
+            providesTags: (result, error, slug) => [{ type: "Blog", id: slug }],
+        }),
+
+        /* ------------------ 🔒 ADMIN ------------------ */
+        getBlogs: builder.query<
+            { data: Blog[]; pagination: PaginationMeta },
+            PaginationParams
+        >({
+            query: ({ page = 1, limit = 10, search = "" }) =>
+                `blog/admin/all?page=${page}&limit=${limit}&search=${encodeURIComponent(
+                    search
+                )}`,
             providesTags: ["Blog"],
         }),
 
-        /**
-         * 🔒 Admin-Protected Routes
-         */
-
-        // ✅ Get all blogs (admin - paginated + searchable)
-        getBlogs: builder.query({
-            query: ({ page = 1, limit = 10, search = "", sortBy = "createdAt", sortOrder = "desc" }) =>
-                `blog/admin/all?page=${page}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
-            providesTags: ["Blog"],
-        }),
-
-        // ✅ Get single blog by slug (admin)
-        getBlogBySlug: builder.query({
-            query: (slug: string) => `blog/${slug}`,
-            providesTags: ["Blog"],
-        }),
-
-        // ✅ Create new blog (multipart/form-data)
-        createBlog: builder.mutation({
-            query: (formData: FormData) => ({
+        createBlog: builder.mutation<{ message: string; data: Blog }, FormData>({
+            query: (formData) => ({
                 url: `blog/admin`,
                 method: "POST",
                 body: formData,
@@ -60,29 +85,38 @@ export const blogApi = createApi({
             invalidatesTags: ["Blog"],
         }),
 
-        // ✅ Update blog (PUT)
-        updateBlog: builder.mutation({
-            query: ({ slug, formData }: { slug: string; formData: FormData }) => ({
+        updateBlog: builder.mutation<
+            { message: string; data: Blog },
+            { slug: string; formData: FormData }
+        >({
+            query: ({ slug, formData }) => ({
                 url: `blog/admin/${slug}`,
                 method: "PUT",
                 body: formData,
             }),
-            invalidatesTags: ["Blog"],
+            invalidatesTags: (result, error, { slug }) => [
+                { type: "Blog", id: slug },
+                "Blog",
+            ],
         }),
 
-        // ✅ Partial update (PATCH)
-        partiallyUpdateBlog: builder.mutation({
-            query: ({ slug, data }: { slug: string; data: any }) => ({
+        partiallyUpdateBlog: builder.mutation<
+            { message: string; data: Blog },
+            { slug: string; data: Partial<Blog> }
+        >({
+            query: ({ slug, data }) => ({
                 url: `blog/admin/${slug}`,
                 method: "PATCH",
                 body: data,
             }),
-            invalidatesTags: ["Blog"],
+            invalidatesTags: (result, error, { slug }) => [
+                { type: "Blog", id: slug },
+                "Blog",
+            ],
         }),
 
-        // ✅ Delete blog
-        deleteBlog: builder.mutation({
-            query: (slug: string) => ({
+        deleteBlog: builder.mutation<{ message: string }, string>({
+            query: (slug) => ({
                 url: `blog/admin/${slug}`,
                 method: "DELETE",
             }),
@@ -93,9 +127,8 @@ export const blogApi = createApi({
 
 export const {
     useGetPublicBlogsQuery,
-    useGetPublicBlogBySlugQuery,
-    useGetBlogsQuery,
     useGetBlogBySlugQuery,
+    useGetBlogsQuery,
     useCreateBlogMutation,
     useUpdateBlogMutation,
     usePartiallyUpdateBlogMutation,
