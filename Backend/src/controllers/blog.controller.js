@@ -5,29 +5,29 @@ import {
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
 
-/* Helper: Format mongoose validation errors */
+// Format mongoose validation errors
 const formatErrors = (err) => {
   const errors = {};
   if (err.errors) {
-    for (const [key, val] of Object.entries(err.errors)) {
-      errors[key] = val.message;
+    for (const [key, value] of Object.entries(err.errors)) {
+      errors[key] = value.message;
     }
   }
   return errors;
 };
 
-/* ================================
+/* ============================
    🟢 PUBLIC CONTROLLERS
-   ================================ */
+============================ */
+
 export const getAllActiveBlogs = async (req, res) => {
   try {
     const page = +req.query.page || 1;
     const limit = +req.query.limit || 10;
     const search = req.query.search?.trim() || "";
-    const sortBy = req.query.sortBy || "createdAt";
-    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
     const filter = { isActive: true };
+
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -38,49 +38,53 @@ export const getAllActiveBlogs = async (req, res) => {
     const total = await Blog.countDocuments(filter);
     const blogs = await Blog.find(filter)
       .populate("category", "name slug")
-      .sort({ [sortBy]: sortOrder })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Active blogs fetched successfully",
       data: blogs,
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("Error fetching blogs:", err);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
-
-export const getBlogBySlug = async (req, res) => {
-  try {
-    const blog = await Blog.findOne({ slug: req.params.slug })
-      .populate("category", "name slug")
-      .lean();
-
-    if (!blog)
-      return res.status(404).json({ success: false, message: "Blog not found" });
-
-    res.status(200).json({ success: true, data: blog });
-  } catch (err) {
-    console.error("Error fetching blog:", err);
+    console.error(err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-/* ================================
+export const getBlogById = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id)
+      .populate("category", "name slug")
+      .lean();
+
+    if (!blog)
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+
+    res.json({ success: true, data: blog });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+/* ============================
    🔒 ADMIN CONTROLLERS
-   ================================ */
+============================ */
+
 export const getAllBlogs = async (req, res) => {
   try {
-    const page = +req.query.page || 1;
-    const limit = +req.query.limit || 10;
-    const search = req.query.search?.trim() || "";
-    const sortBy = req.query.sortBy || "createdAt";
-    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
 
     const filter = search
       ? {
@@ -96,184 +100,248 @@ export const getAllBlogs = async (req, res) => {
     const blogs = await Blog.find(filter)
       .populate("category", "name slug")
       .populate("createdBy updatedBy", "name email")
-      .sort({ [sortBy]: sortOrder })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Blogs fetched successfully",
       data: blogs,
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("Error fetching blogs:", err);
+    console.error(err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+/* ============================
+   🟢 CREATE BLOG
+============================ */
 
 export const createBlog = async (req, res) => {
   const uploaded = { thumbnail: null, gallery: [] };
 
   try {
-    const { title, category, isActive = true, isFeature = false } = req.body;
+    const { title, category, isActive, isFeature } = req.body;
 
     if (!title?.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
         errors: { title: "Title is required" },
       });
     }
 
     const slug = slugify(title, { lower: true, strict: true });
+
     if (await Blog.findOne({ slug })) {
-      return res.status(400).json({
-        success: false,
-        message: "A blog with this title already exists.",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Title already exists" });
     }
 
-    // Upload thumbnail
     let thumbnailUrl = null;
+
+    /* Upload Thumbnail */
     if (req.files?.thumbnail?.[0]?.path) {
-      const upload = await uploadToCloudinary(req.files.thumbnail[0].path, "blog/thumbnails");
+      const upload = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "blog/thumbnails"
+      );
       thumbnailUrl = upload.secure_url;
       uploaded.thumbnail = upload.public_id;
     }
 
-    // Upload gallery
-    const galleryImages = [];
+    /* Upload Gallery */
+    const gallery_images = [];
     if (req.files?.gallery_images?.length) {
       for (const file of req.files.gallery_images) {
         const up = await uploadToCloudinary(file.path, "blog/gallery");
-        galleryImages.push(up.secure_url);
+        gallery_images.push(up.secure_url);
         uploaded.gallery.push(up.public_id);
       }
     }
 
     const blog = await Blog.create({
-      title: title.trim(),
+      title,
       slug,
       category: category || null,
+      short_description: req.body.short_description,
+      description: req.body.description,
       thumbnail: thumbnailUrl,
-      gallery_images: galleryImages,
-      isActive: isActive === "true" || isActive === true,
-      isFeature: isFeature === "true" || isFeature === true,
+      gallery_images,
+      seo: req.body.seo,
+      isActive,
+      isFeature,
       createdBy: req.user._id,
     });
 
-    res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
+    res.status(201).json({ success: true, data: blog });
   } catch (err) {
-    console.error("Error creating blog:", err);
+    console.error(err);
 
-    // Rollback cloud uploads
-    if (uploaded.thumbnail) await destroyFromCloudinary(uploaded.thumbnail);
-    for (const id of uploaded.gallery) await destroyFromCloudinary(id);
-
-    if (err.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: formatErrors(err),
-      });
-    }
+    // rollback
+    if (uploaded.thumbnail) destroyFromCloudinary(uploaded.thumbnail);
+    for (const id of uploaded.gallery) destroyFromCloudinary(id);
 
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
+/* ============================
+   🟣 FULL UPDATE (PUT)
+   Supports:
+   - Add new images
+   - Remove specific images
+   - Keep old images
+============================ */
+
 export const updateBlog = async (req, res) => {
   try {
-    const blog = await Blog.findOne({ slug: req.params.slug });
+    const blog = await Blog.findById(req.params.id);
     if (!blog)
-      return res.status(404).json({ success: false, message: "Blog not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
 
-    // Thumbnail replace
-    if (req.files?.thumbnail?.[0]?.path) {
+    const {
+      title,
+      category,
+      isActive,
+      isFeature,
+      remove_gallery = "[]",
+      keep_gallery = "[]",
+    } = req.body;
+
+    const removeList = JSON.parse(remove_gallery);
+    const keepList = JSON.parse(keep_gallery);
+
+    /* Replace thumbnail if new uploaded */
+    if (req.files?.thumbnail?.[0]) {
       if (blog.thumbnail) {
         const id = blog.thumbnail.split("/").pop().split(".")[0];
         await destroyFromCloudinary(`blog/thumbnails/${id}`);
       }
-      const up = await uploadToCloudinary(req.files.thumbnail[0].path, "blog/thumbnails");
+
+      const up = await uploadToCloudinary(
+        req.files.thumbnail[0].path,
+        "blog/thumbnails"
+      );
       blog.thumbnail = up.secure_url;
     }
 
-    // Replace gallery
-    if (req.files?.gallery_images?.length) {
-      for (const img of blog.gallery_images) {
-        const id = img.split("/").pop().split(".")[0];
+    /* Remove gallery images */
+    for (const url of removeList) {
+      if (blog.gallery_images.includes(url)) {
+        const id = url.split("/").pop().split(".")[0];
         await destroyFromCloudinary(`blog/gallery/${id}`);
       }
-      const uploads = [];
-      for (const file of req.files.gallery_images) {
-        const up = await uploadToCloudinary(file.path, "blog/gallery");
-        uploads.push(up.secure_url);
-      }
-      blog.gallery_images = uploads;
     }
 
-    // Update fields
-    const { title, category, isActive, isFeature } = req.body;
+    let newGallery = keepList; // keep old selected
+
+    /* Add new gallery images */
+    if (req.files?.gallery_images?.length) {
+      for (const file of req.files.gallery_images) {
+        const up = await uploadToCloudinary(file.path, "blog/gallery");
+        newGallery.push(up.secure_url);
+      }
+    }
+
+    blog.gallery_images = newGallery;
+
+    // update other fields
     if (title) {
-      blog.title = title.trim();
+      blog.title = title;
       blog.slug = slugify(title, { lower: true, strict: true });
     }
 
-    blog.category = category || blog.category;
-    blog.isActive = isActive ?? blog.isActive;
-    blog.isFeature = isFeature ?? blog.isFeature;
-    blog.updatedBy = req.user._id;
+    if (category !== undefined) blog.category = category;
+    blog.short_description = req.body.short_description;
+    blog.description = req.body.description;
+    blog.seo = req.body.seo || blog.seo;
 
+    if (isActive !== undefined) blog.isActive = isActive;
+    if (isFeature !== undefined) blog.isFeature = isFeature;
+
+    blog.updatedBy = req.user._id;
     await blog.save();
-    res.status(200).json({ success: true, message: "Blog updated successfully", data: blog });
+
+    res.json({ success: true, data: blog });
   } catch (err) {
-    console.error("Error updating blog:", err);
+    console.error(err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+/* ============================
+   🟡 PARTIAL UPDATE (PATCH)
+   No file uploads
+============================ */
 
 export const partiallyUpdateBlog = async (req, res) => {
   try {
-    const blog = await Blog.findOne({ slug: req.params.slug });
+    const blog = await Blog.findById(req.params.id);
     if (!blog)
-      return res.status(404).json({ success: false, message: "Blog not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
 
-    Object.entries(req.body).forEach(([k, v]) => {
-      if (v !== undefined && k !== "_id") blog[k] = v;
+    const allowed = [
+      "title",
+      "short_description",
+      "description",
+      "category",
+      "isActive",
+      "isFeature",
+      "seo",
+    ];
+
+    Object.entries(req.body).forEach(([key, value]) => {
+      if (allowed.includes(key)) blog[key] = value;
     });
+
+    if (req.body.title) {
+      blog.slug = slugify(req.body.title, { lower: true, strict: true });
+    }
 
     blog.updatedBy = req.user._id;
     await blog.save();
 
-    res.status(200).json({ success: true, message: "Blog partially updated", data: blog });
+    res.json({ success: true, data: blog });
   } catch (err) {
-    console.error("Error partially updating blog:", err);
+    console.error(err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-export const destroyBlogBySlug = async (req, res) => {
-  try {
-    const blog = await Blog.findOne({ slug: req.params.slug });
-    if (!blog)
-      return res.status(404).json({ success: false, message: "Blog not found" });
+/* ============================
+   🔴 DELETE BLOG
+============================ */
 
-    // Clean up Cloudinary
+export const destroyBlogById = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog)
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+
     if (blog.thumbnail) {
       const id = blog.thumbnail.split("/").pop().split(".")[0];
       await destroyFromCloudinary(`blog/thumbnails/${id}`);
     }
-    for (const img of blog.gallery_images || []) {
+
+    for (const img of blog.gallery_images) {
       const id = img.split("/").pop().split(".")[0];
       await destroyFromCloudinary(`blog/gallery/${id}`);
     }
 
-    await Blog.deleteOne({ slug: req.params.slug });
-    res.status(200).json({ success: true, message: "Blog deleted successfully" });
+    await blog.deleteOne();
+    res.json({ success: true, message: "Blog deleted successfully" });
   } catch (err) {
-    console.error("Error deleting blog:", err);
+    console.error(err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

@@ -1,5 +1,6 @@
 // app/routes/blog/data/blogSlice.ts
 
+// app/routes/blog/data/blogSlice.ts
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface BlogState {
@@ -20,24 +21,19 @@ const blogSlice = createSlice({
   name: "blog",
   initialState,
   reducers: {
-    // ✅ Set sorting
     setSort(state, action: PayloadAction<{ sortBy: string; sortOrder: string }>) {
-      const { sortBy, sortOrder } = action.payload;
-      state.sortBy = sortBy;
-      state.sortOrder = sortOrder;
+      state.sortBy = action.payload.sortBy;
+      state.sortOrder = action.payload.sortOrder;
     },
 
-    // ✅ Set search
     setSearch(state, action: PayloadAction<string>) {
       state.search = action.payload;
     },
 
-    // ✅ Select / Deselect blog
     setSelectedBlog(state, action: PayloadAction<any | null>) {
       state.selectedBlog = action.payload;
     },
 
-    // ✅ Reset filters
     resetFilters(state) {
       state.sortBy = "createdAt";
       state.sortOrder = "desc";
@@ -47,5 +43,7 @@ const blogSlice = createSlice({
   },
 });
 
-export const { setSort, setSearch, setSelectedBlog, resetFilters } = blogSlice.actions;
+export const { setSort, setSearch, setSelectedBlog, resetFilters } =
+  blogSlice.actions;
+
 export default blogSlice.reducer;

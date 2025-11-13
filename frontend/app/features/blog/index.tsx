@@ -1,5 +1,4 @@
 // app/features/blog/index.tsx
-
 "use client";
 
 import React from "react";
@@ -37,7 +36,6 @@ export default function BlogPage() {
   const [limit, setLimit] = React.useState(10);
   const [tableInstance, setTableInstance] = React.useState<any>(null);
 
-  // ✅ Fetch all blogs
   const { data, isLoading } = useGetBlogsQuery({ page, limit });
   const [toggleBlogStatus] = usePartiallyUpdateBlogMutation();
   const [deleteBlog] = useDeleteBlogMutation();
@@ -45,22 +43,23 @@ export default function BlogPage() {
   const blogData = data?.data ?? [];
   const totalPages = data?.pagination?.totalPages ?? 1;
 
-  // ✅ Delete handler
+  // ⭐ FIX DELETE HANDLER (use _id)
   const handleDelete = async (item: any) => {
-    await toast.promise(deleteBlog(item.slug).unwrap(), {
+    await toast.promise(deleteBlog(item._id).unwrap(), {
       loading: `Deleting "${item.title}"...`,
       success: `Blog "${item.title}" deleted successfully!`,
       error: "Failed to delete blog.",
     });
   };
 
-  // ✅ Toggle active status
+  // ⭐ FIX TOGGLE ACTIVE USING _id
   const handleToggleActive = async (blog: any) => {
     try {
       await toggleBlogStatus({
-        slug: blog.slug,
+        id: blog._id, // ⭐ MUST use _id
         data: { isActive: !blog.isActive },
       }).unwrap();
+
       toast.success(
         `Blog "${blog.title}" has been ${
           blog.isActive ? "deactivated" : "activated"
@@ -71,7 +70,6 @@ export default function BlogPage() {
     }
   };
 
-  // ✅ Define table columns
   const columns: ColumnDef<any>[] = [
     {
       id: "select",
@@ -82,17 +80,16 @@ export default function BlogPage() {
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
         />
       ),
     },
+
     {
       accessorKey: "thumbnail",
       header: "Thumbnail",
@@ -100,15 +97,15 @@ export default function BlogPage() {
         row.original.thumbnail ? (
           <img
             src={row.original.thumbnail}
-            alt={row.original.title}
             className="h-10 w-10 rounded object-cover border"
           />
         ) : (
-          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
+          <div className="h-10 w-10 bg-muted rounded flex items-center justify-center">
             N/A
           </div>
         ),
     },
+
     {
       accessorKey: "title",
       header: ({ column }) => (
@@ -116,16 +113,11 @@ export default function BlogPage() {
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Title
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Title <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <span className="font-medium text-foreground">
-          {row.original.title}
-        </span>
-      ),
     },
+
     {
       accessorKey: "category.name",
       header: "Category",
@@ -134,6 +126,7 @@ export default function BlogPage() {
           <span className="text-muted-foreground">Uncategorized</span>
         ),
     },
+
     {
       accessorKey: "isActive",
       header: "Active",
@@ -144,6 +137,7 @@ export default function BlogPage() {
         />
       ),
     },
+
     {
       accessorKey: "isFeature",
       header: "Featured",
@@ -152,24 +146,27 @@ export default function BlogPage() {
           checked={row.original.isFeature}
           onCheckedChange={() =>
             toggleBlogStatus({
-              slug: row.original.slug,
+              id: row.original._id, // ⭐ FIX
               data: { isFeature: !row.original.isFeature },
             })
           }
         />
       ),
     },
+
     {
       accessorKey: "createdAt",
       header: "Created At",
       cell: ({ row }) =>
         new Date(row.original.createdAt).toLocaleDateString("en-IN"),
     },
+
     {
       id: "actions",
       header: "Actions",
       cell: ({ row, table }) => {
         const blog = row.original;
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -177,19 +174,23 @@ export default function BlogPage() {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
+
+              {/* ⭐ FIX EDIT NAVIGATION */}
               <DropdownMenuItem
-                onClick={() => navigate(`/admin/blog/edit/${blog.slug}`)}
+                onClick={() => navigate(`/admin/blog/edit/${blog._id}`)}
               >
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
+
               <DropdownMenuItem
                 onClick={() =>
                   (table.options.meta as any)?.openDeleteDialog(blog)
                 }
-                className="text-red-600 focus:text-red-600"
+                className="text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>
@@ -202,7 +203,6 @@ export default function BlogPage() {
 
   return (
     <div className="p-0 space-y-3">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Blogs</h1>
         <Button onClick={() => navigate("/admin/blog/create")}>
@@ -210,10 +210,8 @@ export default function BlogPage() {
         </Button>
       </div>
 
-      {/* BULK ACTIONS */}
       {tableInstance && <BulkActions table={tableInstance} entityName="blog" />}
 
-      {/* DATA TABLE */}
       <DataTable
         columns={columns}
         data={blogData}

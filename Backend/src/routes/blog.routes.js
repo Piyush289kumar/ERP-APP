@@ -1,13 +1,15 @@
+// routes/blog.routes.js
 import { Router } from "express";
 import {
   getAllActiveBlogs,
-  getBlogBySlug,
+  getBlogById,
   getAllBlogs,
   createBlog,
   updateBlog,
   partiallyUpdateBlog,
-  destroyBlogBySlug,
+  destroyBlogById,
 } from "../controllers/blog.controller.js";
+
 import { ensureAuth } from "../middleware/authMiddleware.js";
 import upload from "../config/multer.js";
 
@@ -15,15 +17,13 @@ const router = Router();
 
 /* ================================
    🟢 PUBLIC ROUTES
-   ================================ */
-
-// ⚠️ Important: Keep dynamic slug route LAST
+================================ */
 router.get("/", getAllActiveBlogs);
-router.get("/:slug", getBlogBySlug);
+router.get("/:id", getBlogById);
 
 /* ================================
    🔒 ADMIN ROUTES
-   ================================ */
+================================ */
 router.get("/admin/all", ensureAuth, getAllBlogs);
 
 router.post(
@@ -37,7 +37,7 @@ router.post(
 );
 
 router.put(
-  "/admin/:slug",
+  "/admin/:id",
   ensureAuth,
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
@@ -46,7 +46,7 @@ router.put(
   updateBlog
 );
 
-router.patch("/admin/:slug", ensureAuth, partiallyUpdateBlog);
-router.delete("/admin/:slug", ensureAuth, destroyBlogBySlug);
+router.patch("/admin/:id", ensureAuth, partiallyUpdateBlog);
+router.delete("/admin/:id", ensureAuth, destroyBlogById);
 
 export default router;

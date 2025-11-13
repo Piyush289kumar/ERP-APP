@@ -8,34 +8,53 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageIcon, UploadIcon, XIcon, Loader2 } from "lucide-react";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
+
 import {
   useCreateBlogMutation,
   useUpdateBlogMutation,
-  useGetBlogBySlugQuery,
+  useGetBlogByIdQuery,
 } from "../data/blogApi";
+
 import { useGetCategoriesQuery } from "~/features/category/data/categoryApi";
 import { RichTextEditor } from "~/components/crud/RichTextEditor";
 import { Combobox } from "@/components/crud/Combobox";
 
-// ✅ Validation helper
+// ------------------ VALIDATION ------------------
 const validate = (values: any) => {
   const errors: Record<string, string> = {};
-  if (!values.title.trim()) errors.title = "Title is required.";
-  if (!values.short_description.trim())
+
+  // Title
+  if (!values.title.trim()) {
+    errors.title = "Title is required.";
+  } else if (values.title.trim().length < 3) {
+    errors.title = "Title must be at least 3 characters.";
+  } else if (values.title.trim().length > 150) {
+    errors.title = "Title cannot exceed 150 characters.";
+  }
+
+  // Short Description
+  if (!values.short_description.trim()) {
     errors.short_description = "Short description is required.";
-  if (!values.description.trim())
+  } else if (values.short_description.trim().length > 300) {
+    errors.short_description =
+      "Short description cannot exceed 300 characters.";
+  }
+
+  // Description
+  if (!values.description.trim()) {
     errors.description = "Description is required.";
+  }
+
+  // Category (optional, but if exists, must be valid)
+  if (values.category && typeof values.category !== "string") {
+    errors.category = "Invalid category selected.";
+  }
+
   return errors;
 };
 
@@ -45,24 +64,20 @@ export default function BlogForm({
   mode?: "create" | "edit";
 }) {
   const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const slug = id; // ✅ Alias to keep rest of your code unchanged
+  const { id } = useParams();
+  const isEdit = mode === "edit" || !!id;
 
-  const isEdit = mode === "edit" || !!slug;
-
-  // ✅ API Hooks
-  const { data: blogData, isLoading: loadingBlog } = useGetBlogBySlugQuery(
-    slug ?? "",
-    {
-      skip: !isEdit,
-    }
-  );
+  // ------------------ QUERIES ------------------
+  const { data: blogData, isLoading: loadingBlog } = useGetBlogByIdQuery(id!, {
+    skip: !isEdit,
+  });
 
   const { data: categoryData } = useGetCategoriesQuery({ page: 1, limit: 100 });
+
   const [createBlog] = useCreateBlogMutation();
   const [updateBlog] = useUpdateBlogMutation();
 
-  // ✅ Local State
+  // ------------------ FORM STATE ------------------
   const [values, setValues] = useState({
     title: "",
     category: "",
@@ -79,51 +94,15 @@ export default function BlogForm({
     isFeature: false,
   });
 
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Prefill for Edit Mode
-  // ✅ Prefill for Edit Mode
-  useEffect(() => {
-    if (blogData?.data) {
-      const b = blogData.data;
-
-      setValues({
-        title: b.title || "",
-        category:
-          typeof b.category === "object" && b.category !== null
-            ? (b.category as any)._id
-            : (b.category as string) || "",
-        short_description: b.short_description || "",
-        description: b.description || "",
-        thumbnail: b.thumbnail || null,
-        gallery_images: b.gallery_images || [],
-        seo: {
-          metaTitle: b.seo?.metaTitle || "",
-          metaDescription: b.seo?.metaDescription || "",
-          metaKeywords: Array.isArray(b.seo?.metaKeywords)
-            ? b.seo.metaKeywords.join(", ")
-            : b.seo?.metaKeywords || "",
-        },
-        isActive: b.isActive ?? true,
-        isFeature: b.isFeature ?? false,
-      });
-
-      // ✅ Prevent auto-replacement of old images by clearing temp uploads
-      if (b.thumbnail) {
-        thumbHandlers.clearFiles(); // clears any temporary thumbnail uploads
-      }
-      if (b.gallery_images?.length) {
-        galleryHandlers.clearFiles(); // clears any temporary gallery uploads
-      }
-    }
-  }, [blogData]);
-
-  // ✅ File Upload Hooks
+  // ------------------ FILE UPLOAD HOOKS ------------------
   const [
     { files: thumbFiles, isDragging: thumbDrag, errors: thumbErrors },
     thumbHandlers,
-  ] = useFileUpload({ accept: "image/*", maxSize: 3 * 1024 * 1024 });
+  ] = useFileUpload({ accept: "image/*", maxSize: 5 * 1024 * 1024 });
 
   const [
     { files: galleryFiles, isDragging: galleryDrag, errors: galleryErrors },
@@ -134,118 +113,130 @@ export default function BlogForm({
     maxSize: 5 * 1024 * 1024,
   });
 
-  const thumbPreview = thumbFiles?.[0]?.preview || values.thumbnail || null;
+  const thumbPreview = thumbFiles[0]?.preview || values.thumbnail || null;
+
   const galleryPreviews = [
-    ...(values.gallery_images || []), // Existing images from DB
-    ...galleryFiles.map((f) => f.preview), // Newly uploaded images
+    ...(values.gallery_images || []),
+    ...galleryFiles.map((f) => f.preview),
   ];
 
+  // ------------------ PREFILL FORM ON EDIT ------------------
+  useEffect(() => {
+    if (!blogData?.data) return;
+
+    const b = blogData.data;
+
+    setValues({
+      title: b.title || "",
+      category:
+        b.category && typeof b.category === "object"
+          ? (b.category as any)._id
+          : b.category || "",
+      short_description: b.short_description || "",
+      description: b.description || "",
+      thumbnail: b.thumbnail || null,
+      gallery_images: b.gallery_images || [],
+      seo: {
+        metaTitle: b.seo?.metaTitle || "",
+        metaDescription: b.seo?.metaDescription || "",
+        metaKeywords: Array.isArray(b.seo?.metaKeywords)
+          ? b.seo.metaKeywords.join(", ")
+          : b.seo?.metaKeywords || "",
+      },
+      isActive: b.isActive ?? true,
+      isFeature: b.isFeature ?? false,
+    });
+
+    thumbHandlers.clearFiles();
+    galleryHandlers.clearFiles();
+  }, [blogData]);
+
+  // ------------------ CHANGE HANDLER ------------------
   const handleChange = (name: string, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
   };
 
-  // ✅ Remove gallery image (works for both existing and new)
+  // ------------------ REMOVE GALLERY IMAGE ------------------
   const handleRemoveGalleryImage = (src: string) => {
     if (values.gallery_images.includes(src)) {
-      // Existing image (Cloudinary URL)
+      setRemovedImages((prev) => [...prev, src]);
       setValues((prev) => ({
         ...prev,
         gallery_images: prev.gallery_images.filter((img) => img !== src),
       }));
     } else {
-      // New uploaded image
-      const fileToRemove = galleryFiles.find((f) => f.preview === src);
-      if (fileToRemove) galleryHandlers.removeFile(fileToRemove.id);
+      const file = galleryFiles.find((f) => f.preview === src);
+      if (file) galleryHandlers.removeFile(file.id);
     }
   };
 
-  // ✅ Submit Handler
-  const handleSubmit = async (e: React.FormEvent, actionType = "save") => {
+  // ------------------ SUBMIT HANDLER ------------------
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors = validate(values);
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      toast.error("Please correct the highlighted errors.");
-      return;
+      Object.values(newErrors).forEach((msg) => toast.error(msg));
+      return setErrors(newErrors);
     }
 
     setIsSubmitting(true);
 
     try {
       const formData = new FormData();
-      formData.append("title", values.title.trim());
-      formData.append("short_description", values.short_description.trim());
-      formData.append("description", values.description.trim());
+
+      // Basic Fields
+      formData.append("title", values.title);
+      formData.append("short_description", values.short_description);
+      formData.append("description", values.description);
       formData.append("isActive", String(values.isActive));
       formData.append("isFeature", String(values.isFeature));
       if (values.category) formData.append("category", values.category);
 
-      if (thumbFiles.length > 0)
-        formData.append("thumbnail", thumbFiles[0].file as Blob);
-      if (galleryFiles.length > 0)
-        galleryFiles.forEach((file) =>
-          formData.append("gallery_images", file.file as Blob)
-        );
-
+      // SEO
       formData.append("seo[metaTitle]", values.seo.metaTitle);
       formData.append("seo[metaDescription]", values.seo.metaDescription);
-      formData.append("seo[metaKeywords]", values.seo.metaKeywords);
+      const keywordsArr = values.seo.metaKeywords
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+      formData.append("seo[metaKeywords]", JSON.stringify(keywordsArr));
 
-      if (isEdit && slug) {
-        await updateBlog({ slug: slug!, formData }).unwrap();
+      // Thumbnail
+      if (thumbFiles.length > 0) {
+        formData.append("thumbnail", thumbFiles[0].file as Blob);
+      }
 
+      // Gallery → Keep + Remove + Add new
+      formData.append("keep_gallery", JSON.stringify(values.gallery_images));
+      formData.append("remove_gallery", JSON.stringify(removedImages));
+
+      galleryFiles.forEach((f) =>
+        formData.append("gallery_images", f.file as Blob)
+      );
+
+      if (isEdit) {
+        await updateBlog({ id: id!, formData }).unwrap();
         toast.success("Blog updated successfully!");
-      } else if (isEdit && !slug) {
-        toast.error("Missing blog slug for update.");
       } else {
         await createBlog(formData).unwrap();
         toast.success("Blog created successfully!");
-
-        if (actionType === "create_another") {
-          setValues({
-            title: "",
-            category: "",
-            short_description: "",
-            description: "",
-            thumbnail: null,
-            gallery_images: [],
-            seo: { metaTitle: "", metaDescription: "", metaKeywords: "" },
-            isActive: true,
-            isFeature: false,
-          });
-          setErrors({});
-          return;
-        }
       }
 
       navigate("/admin/blog");
     } catch (err: any) {
-      const server = err?.data ?? {};
-      if (server?.errors) {
-        setErrors((prev) => ({ ...prev, ...server.errors }));
-        toast.error(
-          server.message ||
-            "Validation failed. Please fix the highlighted fields."
-        );
-      } else if (server?.message) {
-        toast.error(server.message);
-      } else {
-        toast.error("Unexpected error occurred.");
-      }
+      toast.error(err?.data?.message || "Something went wrong.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ------------------ UI ------------------
   if (loadingBlog && isEdit) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="ml-2 text-sm text-muted-foreground">
-          Loading blog details...
-        </span>
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -256,37 +247,30 @@ export default function BlogForm({
       label: cat.name,
     })) || [];
 
-  // ✅ UI
   return (
-    <div className="p-6 w-full mx-auto space-y-8">
+    <div className="p-6 space-y-8">
       <header>
         <h1 className="text-3xl font-semibold">
           {isEdit ? "Edit Blog" : "Create Blog"}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          {isEdit
-            ? "Update existing blog details below."
-            : "Fill out the form to create a new blog post."}
-        </p>
       </header>
 
-      <form onSubmit={(e) => handleSubmit(e, "create")} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT SECTION */}
+          {/* LEFT SIDE */}
           <div className="lg:col-span-2 space-y-6">
+            {/* MAIN INFORMATION */}
             <Card>
               <CardHeader>
                 <CardTitle>Main Information</CardTitle>
-                <CardDescription>Enter blog details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-6">
                 {/* Title */}
                 <div>
-                  <Label className="mb-2">Title</Label>
+                  <Label>Title</Label>
                   <Input
                     value={values.title}
                     onChange={(e) => handleChange("title", e.target.value)}
-                    placeholder="Enter blog title"
                     className={errors.title ? "border-red-500" : ""}
                   />
                   {errors.title && (
@@ -296,111 +280,95 @@ export default function BlogForm({
 
                 {/* Category */}
                 <div>
-                  <Label className="mb-2">Category</Label>
+                  <Label>Category</Label>
                   <Combobox
                     options={categoryOptions}
                     value={values.category}
                     onChange={(v) => handleChange("category", v)}
-                    placeholder="Select category..."
                   />
                 </div>
 
                 {/* Short Description */}
                 <div>
+                  <Label>Short Description</Label>
                   <Textarea
                     value={values.short_description}
                     onChange={(e) =>
                       handleChange("short_description", e.target.value)
                     }
-                    placeholder="Enter short description..."
                     className={errors.short_description ? "border-red-500" : ""}
                   />
-                  {errors.short_description && (
-                    <p className="text-xs text-red-500">
-                      {errors.short_description}
-                    </p>
-                  )}
                 </div>
 
-                {/* Rich Description */}
-                <div>
-                  <RichTextEditor
-                    value={values.description}
-                    onChange={(v) => handleChange("description", v)}
-                    error={errors.description}
-                  />
-                </div>
+                {/* Description */}
+                <RichTextEditor
+                  value={values.description}
+                  onChange={(v) => handleChange("description", v)}
+                  error={errors.description}
+                />
               </CardContent>
             </Card>
 
-            {/* SEO SECTION */}
+            {/* SEO */}
             <Card>
               <CardHeader>
-                <CardTitle>SEO Settings</CardTitle>
+                <CardTitle>SEO</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label className="mb-2">Meta Title</Label>
-                  <Input
-                    value={values.seo.metaTitle}
-                    onChange={(e) =>
-                      setValues((prev) => ({
-                        ...prev,
-                        seo: { ...prev.seo, metaTitle: e.target.value },
-                      }))
-                    }
-                    placeholder="Enter meta title"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-2">Meta Description</Label>
-                  <Textarea
-                    value={values.seo.metaDescription}
-                    onChange={(e) =>
-                      setValues((prev) => ({
-                        ...prev,
-                        seo: { ...prev.seo, metaDescription: e.target.value },
-                      }))
-                    }
-                    placeholder="Enter meta description"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-2">
-                    Meta Keywords (comma separated)
-                  </Label>
-                  <Input
-                    value={values.seo.metaKeywords}
-                    onChange={(e) =>
-                      setValues((prev) => ({
-                        ...prev,
-                        seo: { ...prev.seo, metaKeywords: e.target.value },
-                      }))
-                    }
-                    placeholder="keyword1, keyword2"
-                  />
-                </div>
+                <Input
+                  placeholder="Meta Title"
+                  value={values.seo.metaTitle}
+                  onChange={(e) =>
+                    setValues((p) => ({
+                      ...p,
+                      seo: { ...p.seo, metaTitle: e.target.value },
+                    }))
+                  }
+                />
+
+                <Textarea
+                  placeholder="Meta Description"
+                  value={values.seo.metaDescription}
+                  onChange={(e) =>
+                    setValues((p) => ({
+                      ...p,
+                      seo: { ...p.seo, metaDescription: e.target.value },
+                    }))
+                  }
+                />
+
+                <Input
+                  placeholder="meta1, meta2"
+                  value={values.seo.metaKeywords}
+                  onChange={(e) =>
+                    setValues((p) => ({
+                      ...p,
+                      seo: { ...p.seo, metaKeywords: e.target.value },
+                    }))
+                  }
+                />
               </CardContent>
             </Card>
           </div>
 
-          {/* RIGHT SECTION */}
+          {/* RIGHT SIDE */}
           <div className="space-y-6">
             {/* Status */}
             <Card>
               <CardHeader>
                 <CardTitle>Status</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between border rounded-lg p-3">
-                  <Label className="mb-2">Active</Label>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between p-3 border rounded">
+                  Active
                   <Switch
                     checked={values.isActive}
                     onCheckedChange={(v) => handleChange("isActive", v)}
                   />
                 </div>
-                <div className="flex items-center justify-between border rounded-lg p-3">
-                  <Label className="mb-2">Featured</Label>
+
+                <div className="flex justify-between p-3 border rounded">
+                  Featured
                   <Switch
                     checked={values.isFeature}
                     onCheckedChange={(v) => handleChange("isFeature", v)}
@@ -409,50 +377,49 @@ export default function BlogForm({
               </CardContent>
             </Card>
 
-            {/* Thumbnail Upload */}
+            {/* Thumbnail */}
             <Card>
               <CardHeader>
                 <CardTitle>Thumbnail</CardTitle>
               </CardHeader>
               <CardContent>
                 <div
+                  className={`border-2 border-dashed p-6 rounded-xl ${
+                    thumbDrag ? "border-primary bg-accent" : ""
+                  }`}
                   onDragEnter={thumbHandlers.handleDragEnter}
                   onDragLeave={thumbHandlers.handleDragLeave}
                   onDragOver={thumbHandlers.handleDragOver}
                   onDrop={thumbHandlers.handleDrop}
-                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${
-                    thumbDrag ? "bg-accent border-primary" : "border-border"
-                  }`}
                 >
                   <input
                     {...thumbHandlers.getInputProps()}
                     className="sr-only"
                   />
+
                   {thumbPreview ? (
-                    <div className="relative w-full h-48">
+                    <div className="relative h-48">
                       <img
                         src={thumbPreview}
-                        alt="Preview"
-                        className="object-cover h-full w-full rounded-lg"
+                        className="w-full h-full object-cover rounded"
                       />
                       <button
                         type="button"
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1"
                         onClick={() => {
-                          if (thumbFiles.length > 0)
-                            thumbHandlers.removeFile(thumbFiles[0].id);
+                          thumbHandlers.clearFiles();
                           setValues((p) => ({ ...p, thumbnail: null }));
                         }}
-                        className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-full"
                       >
                         <XIcon className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center text-center">
-                      <ImageIcon className="h-6 w-6 opacity-70 mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Drop or select a thumbnail
-                      </p>
+                    <div className="text-center">
+                      <ImageIcon className="h-6 w-6 mx-auto opacity-70" />
+                      <p className="text-sm mt-2">Upload thumbnail</p>
+
+                      {/* FIXED: Add type="button" */}
                       <Button
                         type="button"
                         variant="outline"
@@ -464,44 +431,45 @@ export default function BlogForm({
                     </div>
                   )}
                 </div>
+
                 {thumbErrors[0] && (
-                  <p className="text-xs text-red-500 mt-1">{thumbErrors[0]}</p>
+                  <p className="text-xs text-red-500">{thumbErrors[0]}</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Gallery Upload */}
+            {/* Gallery */}
             <Card>
               <CardHeader>
                 <CardTitle>Gallery Images</CardTitle>
               </CardHeader>
               <CardContent>
                 <div
+                  className={`border-2 border-dashed p-6 rounded-xl ${
+                    galleryDrag ? "border-primary bg-accent" : ""
+                  }`}
                   onDragEnter={galleryHandlers.handleDragEnter}
                   onDragLeave={galleryHandlers.handleDragLeave}
                   onDragOver={galleryHandlers.handleDragOver}
                   onDrop={galleryHandlers.handleDrop}
-                  className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 transition-all ${
-                    galleryDrag ? "bg-accent border-primary" : "border-border"
-                  }`}
                 >
                   <input
                     {...galleryHandlers.getInputProps()}
                     className="sr-only"
                   />
+
                   {galleryPreviews.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      {galleryPreviews.map((src, i) => (
-                        <div key={i} className="relative">
+                    <div className="grid grid-cols-2 gap-2">
+                      {galleryPreviews.map((src) => (
+                        <div key={src} className="relative">
                           <img
                             src={src}
-                            alt={`Gallery ${i}`}
-                            className="h-24 w-full object-cover rounded-lg"
+                            className="h-24 w-full object-cover rounded"
                           />
                           <button
                             type="button"
-                            onClick={() => handleRemoveGalleryImage(src)}
                             className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full"
+                            onClick={() => handleRemoveGalleryImage(src)}
                           >
                             <XIcon className="h-4 w-4" />
                           </button>
@@ -509,11 +477,11 @@ export default function BlogForm({
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center text-center">
-                      <ImageIcon className="h-6 w-6 opacity-70 mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Drop or select gallery images
-                      </p>
+                    <div className="text-center">
+                      <ImageIcon className="h-6 w-6 mx-auto opacity-70" />
+                      <p className="text-sm mt-2">Upload gallery images</p>
+
+                      {/* FIXED: Add type="button" */}
                       <Button
                         type="button"
                         variant="outline"
@@ -525,65 +493,25 @@ export default function BlogForm({
                     </div>
                   )}
                 </div>
+
                 {galleryErrors[0] && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {galleryErrors[0]}
-                  </p>
+                  <p className="text-xs text-red-500">{galleryErrors[0]}</p>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="flex gap-3 pt-6">
-          {isEdit ? (
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          ) : (
-            <>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                onClick={(e) => handleSubmit(e, "create")}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Creating...
-                  </>
-                ) : (
-                  "Create"
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                disabled={isSubmitting}
-                onClick={(e) => handleSubmit(e, "create_another")}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Creating...
-                  </>
-                ) : (
-                  "Create & Create Another"
-                )}
-              </Button>
-            </>
-          )}
+        {/* FOOTER */}
+        <div className="pt-6 flex gap-3">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {isEdit ? "Save Changes" : "Create"}
+          </Button>
+
           <Button
-            variant="outline"
             type="button"
-            disabled={isSubmitting}
+            variant="outline"
             onClick={() => navigate("/admin/blog")}
           >
             Cancel

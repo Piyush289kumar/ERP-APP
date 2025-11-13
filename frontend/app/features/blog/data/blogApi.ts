@@ -1,6 +1,5 @@
 // app/routes/blog/data/blogApi.ts - (using RTK Query)
 
-// app/routes/blog/data/blogApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getToken } from "~/utils/auth";
 
@@ -8,13 +7,8 @@ interface PaginationParams {
     page?: number;
     limit?: number;
     search?: string;
-}
-
-interface PaginationMeta {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+    sortBy?: string;
+    sortOrder?: string;
 }
 
 interface Blog {
@@ -48,10 +42,11 @@ export const blogApi = createApi({
         },
     }),
     tagTypes: ["Blog"],
+
     endpoints: (builder) => ({
         /* ------------------ 🟢 PUBLIC ------------------ */
         getPublicBlogs: builder.query<
-            { data: Blog[]; pagination: PaginationMeta },
+            { data: Blog[]; pagination: any },
             PaginationParams
         >({
             query: ({ page = 1, limit = 10, search = "" }) =>
@@ -59,20 +54,20 @@ export const blogApi = createApi({
             providesTags: ["Blog"],
         }),
 
-        getBlogBySlug: builder.query<{ data: Blog }, string>({
-            query: (slug) => `blog/${slug}`,
-            providesTags: (result, error, slug) => [{ type: "Blog", id: slug }],
+        getBlogById: builder.query<{ data: Blog }, string>({
+            query: (id) => `blog/${id}`,
+            providesTags: (result, error, id) => [{ type: "Blog", id }],
         }),
 
         /* ------------------ 🔒 ADMIN ------------------ */
         getBlogs: builder.query<
-            { data: Blog[]; pagination: PaginationMeta },
+            { data: Blog[]; pagination: any },
             PaginationParams
         >({
-            query: ({ page = 1, limit = 10, search = "" }) =>
+            query: ({ page = 1, limit = 10, search = "", sortBy, sortOrder }) =>
                 `blog/admin/all?page=${page}&limit=${limit}&search=${encodeURIComponent(
                     search
-                )}`,
+                )}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
             providesTags: ["Blog"],
         }),
 
@@ -87,37 +82,34 @@ export const blogApi = createApi({
 
         updateBlog: builder.mutation<
             { message: string; data: Blog },
-            { slug: string; formData: FormData }
+            { id: string; formData: FormData }
         >({
-            query: ({ slug, formData }) => ({
-                url: `blog/admin/${slug}`,
+            query: ({ id, formData }) => ({
+                url: `blog/admin/${id}`,
                 method: "PUT",
                 body: formData,
             }),
-            invalidatesTags: (result, error, { slug }) => [
-                { type: "Blog", id: slug },
+            invalidatesTags: (result, error, { id }) => [
+                { type: "Blog", id },
                 "Blog",
             ],
         }),
 
         partiallyUpdateBlog: builder.mutation<
             { message: string; data: Blog },
-            { slug: string; data: Partial<Blog> }
+            { id: string; data: Partial<Blog> }
         >({
-            query: ({ slug, data }) => ({
-                url: `blog/admin/${slug}`,
+            query: ({ id, data }) => ({
+                url: `blog/admin/${id}`,
                 method: "PATCH",
                 body: data,
             }),
-            invalidatesTags: (result, error, { slug }) => [
-                { type: "Blog", id: slug },
-                "Blog",
-            ],
+            invalidatesTags: ["Blog"],
         }),
 
         deleteBlog: builder.mutation<{ message: string }, string>({
-            query: (slug) => ({
-                url: `blog/admin/${slug}`,
+            query: (id) => ({
+                url: `blog/admin/${id}`,
                 method: "DELETE",
             }),
             invalidatesTags: ["Blog"],
@@ -127,7 +119,7 @@ export const blogApi = createApi({
 
 export const {
     useGetPublicBlogsQuery,
-    useGetBlogBySlugQuery,
+    useGetBlogByIdQuery,
     useGetBlogsQuery,
     useCreateBlogMutation,
     useUpdateBlogMutation,
