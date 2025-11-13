@@ -1,4 +1,5 @@
 // app/features/blog/components/form.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -44,7 +45,8 @@ export default function BlogForm({
   mode?: "create" | "edit";
 }) {
   const navigate = useNavigate();
-  const { slug } = useParams<{ slug?: string }>();
+  const { id } = useParams<{ id?: string }>();
+  const slug = id; // ✅ Alias to keep rest of your code unchanged
 
   const isEdit = mode === "edit" || !!slug;
 
@@ -81,12 +83,17 @@ export default function BlogForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ✅ Prefill for Edit Mode
+  // ✅ Prefill for Edit Mode
   useEffect(() => {
     if (blogData?.data) {
       const b = blogData.data;
+
       setValues({
         title: b.title || "",
-        category: b.category?._id || "",
+        category:
+          typeof b.category === "object" && b.category !== null
+            ? (b.category as any)._id
+            : (b.category as string) || "",
         short_description: b.short_description || "",
         description: b.description || "",
         thumbnail: b.thumbnail || null,
@@ -94,11 +101,21 @@ export default function BlogForm({
         seo: {
           metaTitle: b.seo?.metaTitle || "",
           metaDescription: b.seo?.metaDescription || "",
-          metaKeywords: b.seo?.metaKeywords?.join(", ") || "",
+          metaKeywords: Array.isArray(b.seo?.metaKeywords)
+            ? b.seo.metaKeywords.join(", ")
+            : b.seo?.metaKeywords || "",
         },
         isActive: b.isActive ?? true,
         isFeature: b.isFeature ?? false,
       });
+
+      // ✅ Prevent auto-replacement of old images by clearing temp uploads
+      if (b.thumbnail) {
+        thumbHandlers.clearFiles(); // clears any temporary thumbnail uploads
+      }
+      if (b.gallery_images?.length) {
+        galleryHandlers.clearFiles(); // clears any temporary gallery uploads
+      }
     }
   }, [blogData]);
 
@@ -118,11 +135,29 @@ export default function BlogForm({
   });
 
   const thumbPreview = thumbFiles?.[0]?.preview || values.thumbnail || null;
-  const galleryPreviews = galleryFiles.map((f) => f.preview);
+  const galleryPreviews = [
+    ...(values.gallery_images || []), // Existing images from DB
+    ...galleryFiles.map((f) => f.preview), // Newly uploaded images
+  ];
 
   const handleChange = (name: string, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  // ✅ Remove gallery image (works for both existing and new)
+  const handleRemoveGalleryImage = (src: string) => {
+    if (values.gallery_images.includes(src)) {
+      // Existing image (Cloudinary URL)
+      setValues((prev) => ({
+        ...prev,
+        gallery_images: prev.gallery_images.filter((img) => img !== src),
+      }));
+    } else {
+      // New uploaded image
+      const fileToRemove = galleryFiles.find((f) => f.preview === src);
+      if (fileToRemove) galleryHandlers.removeFile(fileToRemove.id);
+    }
   };
 
   // ✅ Submit Handler
@@ -187,7 +222,18 @@ export default function BlogForm({
 
       navigate("/admin/blog");
     } catch (err: any) {
-      toast.error(err?.data?.message || "❌ Operation failed.");
+      const server = err?.data ?? {};
+      if (server?.errors) {
+        setErrors((prev) => ({ ...prev, ...server.errors }));
+        toast.error(
+          server.message ||
+            "Validation failed. Please fix the highlighted fields."
+        );
+      } else if (server?.message) {
+        toast.error(server.message);
+      } else {
+        toast.error("Unexpected error occurred.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -236,7 +282,7 @@ export default function BlogForm({
               <CardContent className="space-y-5">
                 {/* Title */}
                 <div>
-                  <Label>Title</Label>
+                  <Label className="mb-2">Title</Label>
                   <Input
                     value={values.title}
                     onChange={(e) => handleChange("title", e.target.value)}
@@ -250,7 +296,7 @@ export default function BlogForm({
 
                 {/* Category */}
                 <div>
-                  <Label>Category</Label>
+                  <Label className="mb-2">Category</Label>
                   <Combobox
                     options={categoryOptions}
                     value={values.category}
@@ -261,7 +307,6 @@ export default function BlogForm({
 
                 {/* Short Description */}
                 <div>
-                  <Label>Short Description</Label>
                   <Textarea
                     value={values.short_description}
                     onChange={(e) =>
@@ -279,7 +324,6 @@ export default function BlogForm({
 
                 {/* Rich Description */}
                 <div>
-                  <Label>Description</Label>
                   <RichTextEditor
                     value={values.description}
                     onChange={(v) => handleChange("description", v)}
@@ -296,7 +340,7 @@ export default function BlogForm({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Meta Title</Label>
+                  <Label className="mb-2">Meta Title</Label>
                   <Input
                     value={values.seo.metaTitle}
                     onChange={(e) =>
@@ -309,7 +353,7 @@ export default function BlogForm({
                   />
                 </div>
                 <div>
-                  <Label>Meta Description</Label>
+                  <Label className="mb-2">Meta Description</Label>
                   <Textarea
                     value={values.seo.metaDescription}
                     onChange={(e) =>
@@ -322,7 +366,9 @@ export default function BlogForm({
                   />
                 </div>
                 <div>
-                  <Label>Meta Keywords (comma separated)</Label>
+                  <Label className="mb-2">
+                    Meta Keywords (comma separated)
+                  </Label>
                   <Input
                     value={values.seo.metaKeywords}
                     onChange={(e) =>
@@ -347,14 +393,14 @@ export default function BlogForm({
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between border rounded-lg p-3">
-                  <Label>Active</Label>
+                  <Label className="mb-2">Active</Label>
                   <Switch
                     checked={values.isActive}
                     onCheckedChange={(v) => handleChange("isActive", v)}
                   />
                 </div>
                 <div className="flex items-center justify-between border rounded-lg p-3">
-                  <Label>Featured</Label>
+                  <Label className="mb-2">Featured</Label>
                   <Switch
                     checked={values.isFeature}
                     onCheckedChange={(v) => handleChange("isFeature", v)}
@@ -454,9 +500,7 @@ export default function BlogForm({
                           />
                           <button
                             type="button"
-                            onClick={() =>
-                              galleryHandlers.removeFile(galleryFiles[i].id)
-                            }
+                            onClick={() => handleRemoveGalleryImage(src)}
                             className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full"
                           >
                             <XIcon className="h-4 w-4" />

@@ -24,7 +24,7 @@ export function BlogMultiDeleteDialog<TData>({
       open={open}
       onOpenChange={onOpenChange}
       table={table}
-      entityName="Blog"
+      entityName="blog"
       deleteFn={(slug) => deleteBlog(slug).unwrap()} // ✅ uses slug (blogs delete by slug)
     />
   );
