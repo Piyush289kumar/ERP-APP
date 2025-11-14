@@ -469,7 +469,7 @@ export default function BlogForm({
                           <button
                             type="button"
                             className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full"
-                            onClick={() => handleRemoveGalleryImage(src)}
+                            onClick={() => src && handleRemoveGalleryImage(src)}
                           >
                             <XIcon className="h-4 w-4" />
                           </button>
