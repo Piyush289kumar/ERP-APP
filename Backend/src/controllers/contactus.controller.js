@@ -1,21 +1,12 @@
 import ContactUs from "../models/contactus.model.js";
 
-// Submit Contact Form - Public
+/* ============================================================
+   📌 CREATE ContactUs (Public)
+============================================================ */
 export const createContactUs = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      subject,
-      message,
-      ipAddress,
-      userAgent,
-      meta,
-      status,
-    } = req.body;
+    const { name, email, phone, subject, message, meta } = req.body;
 
-    // Basic Validation
     if (!name || !email || !message) {
       return res.status(400).json({
         status: "error",
@@ -23,200 +14,227 @@ export const createContactUs = async (req, res) => {
       });
     }
 
-    // Create new contact message
-    const contactUs = await ContactUs.create({
+    const contact = await ContactUs.create({
       name,
       email,
       phone: phone || null,
       subject: subject || null,
       message,
-      ipAddress: ipAddress || req.ip,
-      userAgent: userAgent || req.headers["user-agent"] || "",
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
       meta: meta || {},
-      status,
-      createdBy: req.user?._id || null, // Optional if user logged in
+      createdBy: req.user?._id || null,
     });
 
     return res.status(201).json({
       status: "success",
       message: "Contact message submitted successfully.",
-      data: contactUs,
+      data: contact,
     });
   } catch (error) {
-    console.error("❌ Error while submiting contact us:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error creating contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
 };
 
-// Get All Contact us messages - Protected
-
+/* ============================================================
+   📌 GET ALL ContactUs (Admin)
+============================================================ */
 export const getAllContactUs = async (req, res) => {
   try {
-    const contactUs = await ContactUs.find().sort({ createdAt: -1 }).lean();
-    if (!contactUs) {
-      return res.status(404).json({
-        status: "error",
-        message: "Contact us message not found.",
-        data: contactUs,
-      });
-    }
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const total = await ContactUs.countDocuments();
+
+    const messages = await ContactUs.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     return res.status(200).json({
       status: "success",
-      message: "Contact us message feched successflly.",
-      data: contactUs,
+      message: "Contact messages fetched successfully.",
+      data: messages,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
-    console.error("❌ Error while get all contact us message:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error fetching contact list:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
 };
 
-// Get single contact us message by ID
-
+/* ============================================================
+   📌 GET ContactUs by ID
+============================================================ */
 export const getContactUsById = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) {
-      return res.status(400).json({
-        status: "error",
-        message: "ID is required for Contact us message found.",
-        data: contactUs,
-      });
-    }
+    const contact = await ContactUs.findById(req.params.id).lean();
 
-    const contactUs = await ContactUs.findById(id).lean();
-    if (!contactUs) {
+    if (!contact) {
       return res.status(404).json({
         status: "error",
-        message: `Contact us message not found with id : ${id}`,
-        data: contactUs,
+        message: "Contact message not found.",
       });
     }
 
     return res.status(200).json({
       status: "success",
-      message: "Contact us message feched by ID successflly.",
-      data: contactUs,
+      data: contact,
     });
   } catch (error) {
-    console.error("❌ Error while feching contact us by id :", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error fetching contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
 };
 
-// ===============================================
-// 🗑 Delete Contact Us Message by ID - Admin
-// ===============================================
-export const destroyContactUsById = async (req, res) => {
+/* ============================================================
+   📌 PUT — Full Update
+============================================================ */
+export const updateContactUs = async (req, res) => {
   try {
-    const { id } = req.params;
+    const data = req.body;
 
-    if (!id) {
-      return res.status(400).json({
-        status: "error",
-        message: "Contact Us message ID is required.",
-      });
-    }
+    const updated = await ContactUs.findByIdAndUpdate(req.params.id, data, {
+      new: true,
+    });
 
-    const contactUs = await ContactUs.findByIdAndDelete(id);
-
-    if (!contactUs) {
-      return res.status(404).json({
-        status: "error",
-        message: `Contact Us message not found with ID: ${id}`,
-      });
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Contact not found." });
     }
 
     return res.status(200).json({
       status: "success",
-      message: "Contact Us message deleted successfully.",
-      data: contactUs,
+      message: "Contact updated successfully.",
+      data: updated,
     });
   } catch (error) {
-    console.error("❌ Error while deleting Contact Us message:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error updating contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
 };
 
+/* ============================================================
+   📌 PATCH — Partial Update (status, read, etc.)
+============================================================ */
+export const partiallyUpdateContactUs = async (req, res) => {
+  try {
+    const data = req.body;
 
-// ===============================================
-// 📝 Admin Respond to Contact Us Message
-// ===============================================
+    const updated = await ContactUs.findByIdAndUpdate(
+      req.params.id,
+      { $set: data },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Contact not found." });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Contact partially updated.",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("❌ Error partial updating contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
+  }
+};
+
+/* ============================================================
+   📌 ADMIN Respond to Contact Message
+============================================================ */
 export const respondToContactUs = async (req, res) => {
   try {
-    const { id } = req.params;
     const { message } = req.body;
 
-    if (!id) {
-      return res.status(400).json({
-        status: "error",
-        message: "Contact Us message ID is required.",
-      });
-    }
-
-    if (!message || message.trim() === "") {
+    if (!message?.trim()) {
       return res.status(400).json({
         status: "error",
         message: "Response message cannot be empty.",
       });
     }
 
-    const contactUs = await ContactUs.findById(id);
-
-    if (!contactUs) {
-      return res.status(404).json({
-        status: "error",
-        message: `Contact Us message not found with ID: ${id}`,
-      });
+    const contact = await ContactUs.findById(req.params.id);
+    if (!contact) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Contact not found." });
     }
 
-    // Save single response
-    contactUs.response = {
-      message: message.trim(),
+    contact.response = {
+      message,
       respondedBy: req.user._id,
       respondedAt: new Date(),
     };
 
-    // Optionally, push to replies array for history
-    contactUs.replies.push({
-      message: message.trim(),
+    contact.replies.push({
+      message,
       respondedBy: req.user._id,
     });
 
-    // Update status
-    contactUs.status = "answered";
+    contact.status = "answered";
 
-    await contactUs.save();
+    await contact.save();
 
     return res.status(200).json({
       status: "success",
       message: "Response added successfully.",
-      data: contactUs,
+      data: contact,
     });
   } catch (error) {
-    console.error("❌ Error responding to Contact Us message:", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-      error: error.message,
-    });
+    console.error("❌ Error responding contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
+};
 
+/* ============================================================
+   📌 DELETE ContactUs by ID
+============================================================ */
+export const destroyContactUsById = async (req, res) => {
+  try {
+    const deleted = await ContactUs.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        status: "error",
+        message: "Contact message not found.",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Contact message deleted successfully.",
+      data: deleted,
+    });
+  } catch (error) {
+    console.error("❌ Error deleting contact:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
+  }
 };

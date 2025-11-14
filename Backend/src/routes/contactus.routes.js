@@ -1,26 +1,40 @@
-import Router from "express";
+import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { createContactUs, destroyContactUsById, getAllContactUs, getContactUsById, respondToContactUs } from "../controllers/contactus.controller.js";
+
+import {
+  createContactUs,
+  getAllContactUs,
+  getContactUsById,
+  updateContactUs,
+  partiallyUpdateContactUs,
+  destroyContactUsById,
+  respondToContactUs,
+} from "../controllers/contactus.controller.js";
 
 const router = Router();
 
-// Public Routes
+/* ---------------------- PUBLIC ROUTE ---------------------- */
+// Create new contact message (Public)
+router.post("/", createContactUs);
 
-// Submit contact us form
-router.post("/submit", createContactUs);
+/* ---------------------- ADMIN ROUTES ---------------------- */
 
-// Protected Routes
+// Get paginated contact messages
+router.get("/", ensureAuth, getAllContactUs);
 
-// Get all contact us message
-router.get("/admin", ensureAuth, getAllContactUs);
+// Get contact message by ID
+router.get("/:id", ensureAuth, getContactUsById);
 
-// Get single contact us message by ID
-router.get("/admin/:id", ensureAuth, getContactUsById);
+// Full Update Contact (PUT)
+router.put("/:id", ensureAuth, updateContactUs);
 
-// Admin, respond to a contact message
-router.post("/admin/respond/:id", ensureAuth, respondToContactUs);
+// PARTIAL UPDATE Contact (PATCH) - update status, mark read, etc.
+router.patch("/:id", ensureAuth, partiallyUpdateContactUs);
 
-// Delete a contact us message
-router.delete("/admin/destroy/:id", ensureAuth, destroyContactUsById);
+// Admin respond to contact message
+router.post("/respond/:id", ensureAuth, respondToContactUs);
+
+// Delete contact message
+router.delete("/:id", ensureAuth, destroyContactUsById);
 
 export default router;
