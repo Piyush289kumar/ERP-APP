@@ -1,3 +1,5 @@
+// src/app.js
+
 import express from "express";
 import session from "express-session";
 import passport from "passport";
@@ -38,7 +40,10 @@ const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const routePrefix = "/api/v1";
-
+const allowedOrigins = [
+  "http://localhost:5173", // local frontend
+  "https://admin-center-lovat.vercel.app", // production frontend
+];
 // ===============================================
 // ⚙️ Database Connection
 // ===============================================
@@ -49,7 +54,24 @@ connectDB();
 // ===============================================
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(cors({ origin: process.env.FRONTEND_URL || "*", credentials: true }));
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // mobile apps, curl, Postman
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS Not Allowed: " + origin));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(compression());
 app.use(morgan("dev"));
@@ -126,14 +148,5 @@ app.get("/", (req, res) => {
 // 🧰 Global Error Handler
 // ===============================================
 app.use(errorHandler);
-
-// ===============================================
-// 🚀 Start Server
-// ===============================================
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-  });
-}
 
 export default app;
