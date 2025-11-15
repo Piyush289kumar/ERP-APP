@@ -203,7 +203,7 @@ export default function ContactPage() {
               <DropdownMenuSeparator />
 
               <DropdownMenuItem
-                onClick={() => navigate(`/admin/contact/${item._id}`)}
+                onClick={() => navigate(`/admin/contact/edit/${item._id}`)}
               >
                 <FileText className="mr-2 h-4 w-4" /> View Details
               </DropdownMenuItem>
