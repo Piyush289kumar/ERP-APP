@@ -1,7 +1,2 @@
-Backend/node_modules
-Backend/.env
-Backend/.env*
+*.ev*
 *.env*
-Backend/.env
-Backend/.env
-Backend/.env
