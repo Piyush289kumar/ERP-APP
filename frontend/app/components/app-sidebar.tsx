@@ -20,6 +20,8 @@ import {
   ImageUp,
   Layers,
   NotebookTabs,
+  BookCopy,
+  ChartPie,
 } from "lucide-react";
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
@@ -53,36 +55,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       email: "m@example.com",
       avatar: "/avatars/shadcn.jpg",
     },
-    navMain: [
+
+    analyticsNav: [
       {
         title: "Dashboard",
         url: "/admin/dashboard",
-        icon: SquareTerminal,
+        icon: ChartPie,
         isActive: isActive("/admin/dashboard"),
       },
-      // {
-      //   title: "Models",
-      //   url: "/admin/models",
-      //   icon: Bot,
-      //   isActive: isActive("/admin/models"),
-      //   items: [
-      //     { title: "All Categories", url: "/admin/category" },
-      //     { title: "Create New", url: "/admin/category/new" },
-      //     { title: "Manage", url: "/admin/category/manage" },
-      //   ],
-      // },
+    ],
 
+    legalComplianceNav: [
       {
-        title: "App Configuration",
-        url: "/admin/app-configuration",
-        icon: Settings2,
-        isActive: isActive("/admin/blog"),
+        title: "Policy",
+        url: "/admin/policy",
+        icon: FileBadge,
+        isActive: isActive("/admin/policy"),
       },
+    ],
 
+    serviceManagementNav: [
+      {
+        title: "Services",
+        url: "/admin/service",
+        icon: Album,
+        isActive: isActive("/admin/service"),
+      },
+    ],
+
+    customerFeedbackNav: [
+      {
+        title: "Testimonials",
+        url: "/admin/testimonial",
+        icon: UserStar,
+        isActive: isActive("/admin/testimonial"),
+      },
+    ],
+
+    mediaLibraryNav: [
+      {
+        title: "Gallery",
+        url: "/admin/gallery",
+        icon: ImageUp,
+        isActive: isActive("/admin/gallery"),
+      },
+    ],
+
+    communicationCenterNav: [
+      {
+        title: "Contact",
+        url: "/admin/contact",
+        icon: NotebookTabs,
+        isActive: isActive("/admin/contact"),
+      },
+    ],
+
+    contentManagementNav: [
       {
         title: "Blogs",
         url: "/admin/blog",
-        icon: Bot,
+        icon: BookCopy,
         isActive: isActive("/admin/blog"),
         items: [
           { title: "All Blogs", url: "/admin/blog?filter=all" },
@@ -96,64 +128,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
-        title: "Policy",
-        url: "/admin/policy",
-        icon: FileBadge,
-        isActive: isActive("/admin/policy"),
-      },
-
-      {
         title: "Categories",
         url: "/admin/category",
         icon: ChartBarStacked,
         isActive: isActive("/admin/category"),
       },
+    ],
+
+    appSettingsNav: [
       {
-        title: "Services",
-        url: "/admin/service",
-        icon: Album,
-        isActive: isActive("/admin/service"),
+        title: "App Configuration",
+        url: "/admin/app-configuration",
+        icon: Settings2,
+        isActive: isActive("/admin/blog"),
       },
-      {
-        title: "Testimonials",
-        url: "/admin/testimonial",
-        icon: UserStar,
-        isActive: isActive("/admin/testimonial"),
-      },
-      {
-        title: "Gallery",
-        url: "/admin/gallery",
-        icon: ImageUp,
-        isActive: isActive("/admin/gallery"),
-      },
-      {
-        title: "Contact",
-        url: "/admin/contact",
-        icon: NotebookTabs,
-        isActive: isActive("/admin/contact"),
-      },
-      // {
-      //   title: "Documentation",
-      //   url: "/docs",
-      //   icon: BookOpen,
-      //   isActive: isActive("/docs"),
-      // },
-      // {
-      //   title: "Settings",
-      //   url: "/admin/settings",
-      //   icon: Settings2,
-      //   isActive: isActive("/admin/settings"),
-      // },
     ],
 
     navSecondary: [
-      // { title: "Support", url: "#", icon: LifeBuoy },
-      // { title: "Feedback", url: "#", icon: Send },
-    ],
-    projects: [
-      // { name: "Design Engineering", url: "#", icon: Frame },
-      // { name: "Sales & Marketing", url: "#", icon: PieChart },
-      // { name: "Travel", url: "#", icon: Map },
+      { title: "Support", url: "#", icon: LifeBuoy },
+      { title: "Feedback", url: "#", icon: Send },
     ],
   };
 
@@ -181,9 +174,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       {/* Main Content */}
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+      <SidebarContent className="scrollbar-hide">
+        <NavMain items={data.analyticsNav} groupName="Analytics Center" />
+        <NavMain
+          items={data.contentManagementNav}
+          groupName="Content Management"
+        />
+        <NavMain
+          items={data.serviceManagementNav}
+          groupName="Service Management"
+        />
+        <NavMain
+          items={data.customerFeedbackNav}
+          groupName="Customer Feedback"
+        />
+
+        <NavMain items={data.mediaLibraryNav} groupName="Media Library" />
+
+        <NavMain
+          items={data.communicationCenterNav}
+          groupName="Communication Center"
+        />
+        <NavMain
+          items={data.legalComplianceNav}
+          groupName="Legal & Compliance"
+        />
+
+        <NavMain items={data.appSettingsNav} groupName="Application Settings" />
+
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
 
