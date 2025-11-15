@@ -33,6 +33,10 @@ import { testimonialApi } from "~/features/testimonial/data/testimonialApi";
 import galleryReducer from "~/features/gallery/data/gallerySlice";
 import { galleryApi } from "~/features/gallery/data/galleryApi";
 
+// ⚙️  Contact Feature
+import contactReducer from "~/features/contact/data/contactSlice";
+import { contactApi } from "~/features/contact/data/contactApi";
+
 export const store = configureStore({
   reducer: {
     // ✅ App Configuration state + API
@@ -68,6 +72,10 @@ export const store = configureStore({
     gallery: galleryReducer,
     [galleryApi.reducerPath]: galleryApi.reducer,
 
+    // ✅ Contact state + API
+    contact: contactReducer,
+    [contactApi.reducerPath]: contactApi.reducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -78,6 +86,7 @@ export const store = configureStore({
       policyApi.middleware,
       testimonialApi.middleware,
       galleryApi.middleware,
+      contactApi.middleware,
     ),
 });
 
