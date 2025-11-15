@@ -81,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       {
         title: "Blogs",
-        url: "/admin/models",
+        url: "/admin/blog",
         icon: Bot,
         isActive: isActive("/admin/blog"),
         items: [
@@ -89,15 +89,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Active Blogs", url: "/admin/blog?filter=active" },
           { title: "Inactive Blogs", url: "/admin/blog?filter=inactive" },
           { title: "Featured Blogs", url: "/admin/blog?filter=featured" },
-          { title: "Non-Featured Blogs", url: "/admin/blog?filter=nonfeatured" },
+          {
+            title: "Non-Featured Blogs",
+            url: "/admin/blog?filter=nonfeatured",
+          },
         ],
-      },
-
-      {
-        title: "Blogs",
-        url: "/admin/blog",
-        icon: Layers,
-        isActive: isActive("/admin/blog"),
       },
       {
         title: "Policy",
