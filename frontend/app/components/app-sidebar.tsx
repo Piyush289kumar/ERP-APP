@@ -19,6 +19,7 @@ import {
   UserStar,
   ImageUp,
   Layers,
+  NotebookTabs,
 } from "lucide-react";
 import { NavMain } from "~/components/nav-main";
 import { NavProjects } from "~/components/nav-projects";
@@ -92,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
 
-       {
+      {
         title: "Blogs",
         url: "/admin/blog",
         icon: Layers,
@@ -128,6 +129,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/admin/gallery",
         icon: ImageUp,
         isActive: isActive("/admin/gallery"),
+      },
+      {
+        title: "Contact",
+        url: "/admin/contact",
+        icon: NotebookTabs,
+        isActive: isActive("/admin/contact"),
       },
       {
         title: "Documentation",
