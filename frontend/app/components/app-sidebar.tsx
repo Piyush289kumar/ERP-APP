@@ -175,7 +175,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       {/* Main Content */}
       <SidebarContent className="scrollbar-hide">
-        <NavMain items={data.analyticsNav} groupName="Analytics Center" />
+        {/* <NavMain items={data.analyticsNav} groupName="Analytics Center" /> */}
         <NavMain
           items={data.contentManagementNav}
           groupName="Content Management"

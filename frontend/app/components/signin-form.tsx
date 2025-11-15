@@ -55,7 +55,7 @@ export function SignInForm({
         setFormData({ email: "", password: "" });
 
         // Redirect after short delay
-        setTimeout(() => navigate("/admin/dashboard"), 1000);
+        setTimeout(() => navigate("/admin/blog"), 100);
       },
       onError: (error: any) => {
         setMessage({
