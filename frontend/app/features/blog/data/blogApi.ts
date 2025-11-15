@@ -62,14 +62,22 @@ export const blogApi = createApi({
         /* ------------------ 🔒 ADMIN ------------------ */
         getBlogs: builder.query<
             { data: Blog[]; pagination: any },
-            PaginationParams
+            { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string; filter?: string }
         >({
-            query: ({ page = 1, limit = 10, search = "", sortBy, sortOrder }) =>
+            query: ({
+                page = 1,
+                limit = 10,
+                search = "",
+                sortBy = "createdAt",
+                sortOrder = "desc",
+                filter = "all",
+            }) =>
                 `blog/admin/all?page=${page}&limit=${limit}&search=${encodeURIComponent(
                     search
-                )}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+                )}&sortBy=${sortBy}&sortOrder=${sortOrder}&filter=${filter}`,
             providesTags: ["Blog"],
         }),
+
 
         createBlog: builder.mutation<{ message: string; data: Blog }, FormData>({
             query: (formData) => ({

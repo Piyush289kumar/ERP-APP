@@ -4,7 +4,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   useGetBlogsQuery,
   usePartiallyUpdateBlogMutation,
@@ -35,8 +35,10 @@ export default function BlogPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [tableInstance, setTableInstance] = React.useState<any>(null);
+  const [params] = useSearchParams();
+  const filter = params.get("filter") || "all";
 
-  const { data, isLoading } = useGetBlogsQuery({ page, limit });
+  const { data, isLoading } = useGetBlogsQuery({ page, limit, filter });
   const [toggleBlogStatus] = usePartiallyUpdateBlogMutation();
   const [deleteBlog] = useDeleteBlogMutation();
 

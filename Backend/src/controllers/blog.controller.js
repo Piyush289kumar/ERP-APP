@@ -76,6 +76,9 @@ export const getBlogById = async (req, res) => {
    🔒 ADMIN CONTROLLERS
 ============================ */
 
+/* ============================
+   🔒 ADMIN — GET ALL BLOGS (with filters)
+============================ */
 export const getAllBlogs = async (req, res) => {
   try {
     const {
@@ -84,9 +87,21 @@ export const getAllBlogs = async (req, res) => {
       search = "",
       sortBy = "createdAt",
       sortOrder = "desc",
+      filter = "all",
     } = req.query;
 
-    const filter = search
+    let filterQuery = {};
+
+    // ⭐ Status filters
+    if (filter === "active") filterQuery.isActive = true;
+    if (filter === "inactive") filterQuery.isActive = false;
+
+    // ⭐ Featured filters
+    if (filter === "featured") filterQuery.isFeature = true;
+    if (filter === "nonfeatured") filterQuery.isFeature = false;
+
+    // ⭐ Search filter
+    const searchQuery = search
       ? {
           $or: [
             { title: { $regex: search, $options: "i" } },
@@ -96,11 +111,18 @@ export const getAllBlogs = async (req, res) => {
         }
       : {};
 
-    const total = await Blog.countDocuments(filter);
-    const blogs = await Blog.find(filter)
+    // ⭐ Final combined query
+    const finalQuery = {
+      ...filterQuery,
+      ...searchQuery,
+    };
+
+    const total = await Blog.countDocuments(finalQuery);
+
+    const blogs = await Blog.find(finalQuery)
       .populate("category", "name slug")
       .populate("createdBy updatedBy", "name email")
-      .sort({ createdAt: -1 })
+      .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
@@ -108,7 +130,12 @@ export const getAllBlogs = async (req, res) => {
     res.json({
       success: true,
       data: blogs,
-      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     console.error(err);

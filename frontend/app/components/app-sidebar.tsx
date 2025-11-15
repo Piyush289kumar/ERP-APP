@@ -60,36 +60,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: SquareTerminal,
         isActive: isActive("/admin/dashboard"),
       },
+      // {
+      //   title: "Models",
+      //   url: "/admin/models",
+      //   icon: Bot,
+      //   isActive: isActive("/admin/models"),
+      //   items: [
+      //     { title: "All Categories", url: "/admin/category" },
+      //     { title: "Create New", url: "/admin/category/new" },
+      //     { title: "Manage", url: "/admin/category/manage" },
+      //   ],
+      // },
+
       {
-        title: "Models",
-        url: "/admin/models",
-        icon: Bot,
-        isActive: isActive("/admin/models"),
-        items: [
-          { title: "All Categories", url: "/admin/category" },
-          { title: "Create New", url: "/admin/category/new" },
-          { title: "Manage", url: "/admin/category/manage" },
-        ],
-      },
-      {
-        // ✅ NEW COLLAPSIBLE GROUP
         title: "App Configuration",
         url: "/admin/app-configuration",
+        icon: Settings2,
+        isActive: isActive("/admin/blog"),
+      },
+
+      {
+        title: "Blogs",
+        url: "/admin/models",
         icon: Bot,
-        isActive: isActive("/admin/app-configuration"),
+        isActive: isActive("/admin/blog"),
         items: [
-          {
-            title: "General Settings",
-            url: "/admin/app-configuration/general",
-          },
-          {
-            title: "Social Links",
-            url: "/admin/app-configuration/social",
-          },
-          {
-            title: "App Store Links",
-            url: "/admin/app-configuration/app-links",
-          },
+          { title: "All Blogs", url: "/admin/blog?filter=all" },
+          { title: "Active Blogs", url: "/admin/blog?filter=active" },
+          { title: "Inactive Blogs", url: "/admin/blog?filter=inactive" },
+          { title: "Featured Blogs", url: "/admin/blog?filter=featured" },
+          { title: "Non-Featured Blogs", url: "/admin/blog?filter=nonfeatured" },
         ],
       },
 
@@ -136,28 +136,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: NotebookTabs,
         isActive: isActive("/admin/contact"),
       },
-      {
-        title: "Documentation",
-        url: "/docs",
-        icon: BookOpen,
-        isActive: isActive("/docs"),
-      },
-      {
-        title: "Settings",
-        url: "/admin/settings",
-        icon: Settings2,
-        isActive: isActive("/admin/settings"),
-      },
+      // {
+      //   title: "Documentation",
+      //   url: "/docs",
+      //   icon: BookOpen,
+      //   isActive: isActive("/docs"),
+      // },
+      // {
+      //   title: "Settings",
+      //   url: "/admin/settings",
+      //   icon: Settings2,
+      //   isActive: isActive("/admin/settings"),
+      // },
     ],
 
     navSecondary: [
-      { title: "Support", url: "#", icon: LifeBuoy },
-      { title: "Feedback", url: "#", icon: Send },
+      // { title: "Support", url: "#", icon: LifeBuoy },
+      // { title: "Feedback", url: "#", icon: Send },
     ],
     projects: [
-      { name: "Design Engineering", url: "#", icon: Frame },
-      { name: "Sales & Marketing", url: "#", icon: PieChart },
-      { name: "Travel", url: "#", icon: Map },
+      // { name: "Design Engineering", url: "#", icon: Frame },
+      // { name: "Sales & Marketing", url: "#", icon: PieChart },
+      // { name: "Travel", url: "#", icon: Map },
     ],
   };
 
