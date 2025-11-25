@@ -38,11 +38,12 @@ import uploadRoutes from "./routes/upload.routes.js";
 dotenv.config();
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
 const routePrefix = "/api/v1";
 const allowedOrigins = [
   process.env.NEXT_FRONTEND_URL, // Next.js production site
   process.env.ADMIN_FRONTEND_URL, // Admin production site
+  // LAN access (mobile testing)
+  "http://192.168.29.175:3000", // your Next.js IP on Wi-Fi
   "http://localhost:3000", // Next.js local
   "http://localhost:5173",
   "https://admin-center-lovat.vercel.app", // production frontend
@@ -61,7 +62,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);  // SSR, Postman, mobile apps
+      if (!origin) return callback(null, true); // SSR, Postman, mobile apps
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -75,7 +76,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(compression());

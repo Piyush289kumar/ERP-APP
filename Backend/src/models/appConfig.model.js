@@ -4,15 +4,15 @@ const appconfigSchema = new mongoose.Schema(
   {
     appName: {
       type: String,
-      require: true,
+      required: true,
     },
     phoneNumber: {
       type: String,
-      require: true,
+      required: true,
     },
     email: {
       type: String,
-      require: true,
+      required: true,
     },
     companyAddress: [
       {
@@ -22,39 +22,39 @@ const appconfigSchema = new mongoose.Schema(
     ],
     facebookLink: {
       type: String,
-      require: false,
+      required: false,
     },
     instagramLink: {
       type: String,
-      require: false,
+      required: false,
     },
     twitterLink: {
       type: String,
-      require: false,
+      required: false,
     },
     youtubeLink: {
       type: String,
-      require: false,
+      required: false,
     },
     whatsAppLink: {
       type: String,
-      require: false,
+      required: false,
     },
     googleFormLink: {
       type: String,
-      require: false,
+      required: false,
     },
     linkedinLink: {
       type: String,
-      require: false,
+      required: false,
     },
     googleAppStoreLink: {
       type: String,
-      require: false,
+      required: false,
     },
     appleAppStoreLink: {
       type: String,
-      require: false,
+      required: false,
     },
   },
   {

@@ -2,7 +2,7 @@
 
 import { getToken } from "~/utils/auth";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 export interface RegisterPayload {
     name: string,

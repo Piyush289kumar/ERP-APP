@@ -51,38 +51,39 @@ export const getAppConfig = async (req, res) => {
 
 export const modifyAppConfig = async (req, res) => {
   try {
-    const { appName, email, phoneNumber } = req.body;
+    // Accept ALL fields dynamically
+    const updateData = req.body;
 
-    if (!appName || !email || !phoneNumber) {
-      return res.status(401).json({ message: "All fields are required" });
+    // Validate required fields
+    if (!updateData.appName || !updateData.email || !updateData.phoneNumber) {
+      return res
+        .status(400)
+        .json({ message: "App Name, Email & Phone Number are required" });
     }
 
+    // Check existing config
     let app = await appConfig.findOne();
+
     if (!app) {
-      // Create New
-      app = await appConfig.create({
-        appName,
-        email,
-        phoneNumber,
-      });
+      // Create New Config
+      app = await appConfig.create(updateData);
     } else {
-      // Update existing
-      app = await appConfig.findByIdAndUpdate(
-        app._id,
-        {
-          appName,
-          email,
-          phoneNumber,
-        },
-        { new: true }
-      );
+      // Update Existing
+      app = await appConfig.findByIdAndUpdate(app._id, updateData, {
+        new: true,
+        runValidators: true,
+      });
     }
 
-    return res.status(201).json({ message: "App Config Data Update" }, { app });
+    return res.status(201).json({
+      message: "App Config Updated Successfully",
+      data: app,
+    });
   } catch (error) {
+    console.error("❌ Modify App Config Error:", error);
     return res.status(500).json({
       message: "Internal Server Error - App Config Controller",
-      error,
+      error: error.message,
     });
   }
 };
