@@ -13,6 +13,10 @@ import userReducer from "~/features/user/userSlice";
 import blogReducer from "~/features/blog/data/blogSlice";
 import { blogApi } from "~/features/blog/data/blogApi";
 
+// 🗂 Course Feature
+import courseReducer from "~/features/course/data/courseSlice";
+import { courseApi } from "~/features/course/data/courseApi";
+
 // 🗂 Category Feature
 import categoryReducer from "~/features/category/data/categorySlice";
 import { categoryApi } from "~/features/category/data/categoryApi";
@@ -50,6 +54,9 @@ export const store = configureStore({
     blog: blogReducer,
     [blogApi.reducerPath]: blogApi.reducer,
 
+    // ✅ Course state + API
+    course: courseReducer,
+    [courseApi.reducerPath]: courseApi.reducer,
 
     // ✅ Category state + API
     category: categoryReducer,
@@ -58,7 +65,6 @@ export const store = configureStore({
     // ✅ Service state + API
     service: serviceReducer,
     [serviceApi.reducerPath]: serviceApi.reducer,
-
 
     // ✅ Policy state + API
     policy: policyReducer,
@@ -75,18 +81,18 @@ export const store = configureStore({
     // ✅ Contact state + API
     contact: contactReducer,
     [contactApi.reducerPath]: contactApi.reducer,
-
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       appConfigurationApi.middleware,
       blogApi.middleware,
+      courseApi.middleware,
       categoryApi.middleware,
       serviceApi.middleware,
       policyApi.middleware,
       testimonialApi.middleware,
       galleryApi.middleware,
-      contactApi.middleware,
+      contactApi.middleware
     ),
 });
 
