@@ -41,7 +41,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const routePrefix = "/api/v1";
 const allowedOrigins = [
-  "http://localhost:5173", // local frontend
+  process.env.NEXT_FRONTEND_URL, // Next.js production site
+  process.env.ADMIN_FRONTEND_URL, // Admin production site
+  "http://localhost:3000", // Next.js local
+  "http://localhost:5173",
   "https://admin-center-lovat.vercel.app", // production frontend
 ];
 // ===============================================
@@ -57,20 +60,22 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // mobile apps, curl, Postman
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);  // SSR, Postman, mobile apps
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
-      } else {
-        return callback(new Error("CORS Not Allowed: " + origin));
       }
+
+      console.log("❌ Blocked by CORS:", origin);
+      return callback(new Error("CORS Not Allowed: " + origin));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(compression());

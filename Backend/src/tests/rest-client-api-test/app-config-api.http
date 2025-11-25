@@ -1,3 +1,8 @@
+### Get App Config (Public)
+GET {{baseUrl}}/app-config/public
+Accept: application/json
+
+
 ### Get App Config (Protected)
 GET {{baseUrl}}/app-config
 Authorization: Bearer {{token}}
