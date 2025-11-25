@@ -21,6 +21,7 @@ import { TestimonialMultiDeleteDialog } from "~/features/testimonial/components/
 import { GalleryMultiDeleteDialog } from "~/features/gallery/components/gallery-multi-delete-dialog";
 import { BlogMultiDeleteDialog } from "~/features/blog/components/blog-multi-delete-dialog";
 import { ContactMultiDeleteDialog } from "~/features/contact/components/contact-multi-delete-dialog";
+import { CourseMultiDeleteDialog } from "~/features/course/components/blog-multi-delete-dialog";
 // You can add more in the future like:
 // import { UserMultiDeleteDialog } from "~/features/user/components/user-multi-delete-dialog";
 
@@ -86,6 +87,15 @@ export function BulkActions<TData>({
       case "blog":
         return (
           <BlogMultiDeleteDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+            table={table}
+          />
+        );
+
+      case "course":
+        return (
+          <CourseMultiDeleteDialog
             open={showDeleteConfirm}
             onOpenChange={setShowDeleteConfirm}
             table={table}
