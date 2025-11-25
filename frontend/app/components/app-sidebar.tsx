@@ -127,6 +127,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
+      
+       {
+        title: "Course",
+        url: "/admin/course",
+        icon: BookCopy,
+        isActive: isActive("/admin/course"),
+        items: [
+          { title: "All Course", url: "/admin/course?filter=all" },
+          { title: "Active Course", url: "/admin/course?filter=active" },
+          { title: "Inactive Course", url: "/admin/course?filter=inactive" },
+          { title: "Featured Course", url: "/admin/course?filter=featured" },
+          {
+            title: "Non-Featured Blogs",
+            url: "/admin/blog?filter=nonfeatured",
+          },
+        ],
+      },
       {
         title: "Categories",
         url: "/admin/category",

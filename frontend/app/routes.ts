@@ -15,6 +15,7 @@ export default [
             // ✅ Works fine now
             ...createCrudRoutes("app-configuration"),
             ...createCrudRoutes("blog"),
+            ...createCrudRoutes("course"),
             ...createCrudRoutes("category"),
             ...createCrudRoutes("service"),
             ...createCrudRoutes("policy"),
