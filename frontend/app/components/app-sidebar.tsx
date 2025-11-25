@@ -139,8 +139,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Inactive Course", url: "/admin/course?filter=inactive" },
           { title: "Featured Course", url: "/admin/course?filter=featured" },
           {
-            title: "Non-Featured Blogs",
-            url: "/admin/blog?filter=nonfeatured",
+            title: "Non-Featured Course",
+            url: "/admin/course?filter=nonfeatured",
           },
         ],
       },
