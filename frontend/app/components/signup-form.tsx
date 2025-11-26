@@ -112,7 +112,7 @@ export function SignupForm({
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Piyush Kumar Raikwar"
+                  placeholder="Full Name"
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -125,7 +125,7 @@ export function SignupForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="piyushraiwkar289@gmail.com"
+                  placeholder="email@example.com"
                   value={formData.email}
                   onChange={handleChange}
                   required

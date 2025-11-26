@@ -18,8 +18,8 @@ export default function ProfilePage() {
   const [tab, setTab] = useState("basicinfo");
 
   const [user, setUser] = useState({
-    name: "Piyush Kumar Raikwar",
-    email: "piyushraikwar289@gmail.com",
+    name: "Full Name",
+    email: "email@example.com",
     avatar: "/avatars/default.jpg",
     about: "Full Stack Developer passionate about React, Node, and Laravel.",
     linkedin: "",
