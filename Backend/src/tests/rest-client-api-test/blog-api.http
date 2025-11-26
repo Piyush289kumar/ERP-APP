@@ -1,5 +1,5 @@
 ### Get All Blogs
-GET {{baseUrl}}/blog
+GET {{baseUrl}}/blog?page=1&limit=1
 Accept: application/json
 
 ###
