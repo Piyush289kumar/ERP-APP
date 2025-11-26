@@ -267,7 +267,7 @@ export default function BlogForm({
               <CardContent className="space-y-6">
                 {/* Title */}
                 <div>
-                  <Label>Title</Label>
+                  <Label className="mb-2">Title</Label>
                   <Input
                     value={values.title}
                     onChange={(e) => handleChange("title", e.target.value)}
@@ -280,7 +280,7 @@ export default function BlogForm({
 
                 {/* Category */}
                 <div>
-                  <Label>Category</Label>
+                  <Label className="mb-2">Category</Label>
                   <Combobox
                     options={categoryOptions}
                     value={values.category}
@@ -290,7 +290,7 @@ export default function BlogForm({
 
                 {/* Short Description */}
                 <div>
-                  <Label>Short Description</Label>
+                  <Label className="mb-2">Short Description</Label>
                   <Textarea
                     value={values.short_description}
                     onChange={(e) =>
