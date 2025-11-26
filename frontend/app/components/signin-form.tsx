@@ -96,7 +96,7 @@ export function SignInForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="piyushraiwkar289@gmail.com"
+                  placeholder="example@gmail.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
