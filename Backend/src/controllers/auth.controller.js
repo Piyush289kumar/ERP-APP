@@ -43,21 +43,38 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
+    // Normalize email (avoid case sensitivity issues)
+    email = email?.trim().toLowerCase();
+
+    // Validate input
     if (!email || !password) {
-      res.status(400).json({ message: "Email and password are required." });
+      return res.status(400).json({
+        status: "error",
+        message: "Email and password are required.",
+        field: !email ? "email" : "password",
+      });
     }
 
+    // Check user existence
     const user = await User.findOne({ email });
+
+    // Generic error (avoid telling which field is incorrect for security)
     if (!user) {
-      res.status(404).json({ message: "Invalid Credentials." });
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid email or password.",
+      });
     }
 
-    // Match Password
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      res.status(401).json({ message: "Invalid Password." });
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid email or password.",
+      });
     }
 
     // Generate JWT Token
@@ -67,8 +84,9 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
-      message: "Login successfully.",
+    return res.status(200).json({
+      status: "success",
+      message: "Login successful.",
       token,
       user: {
         id: user._id,
@@ -76,9 +94,13 @@ export const login = async (req, res) => {
         email: user.email,
       },
     });
+
   } catch (error) {
-    console.error("Login error:", error.message);
-    res.status(500).json({ message: "Internal Server Error." });
+    console.error("Login error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong. Please try again later.",
+    });
   }
 };
 

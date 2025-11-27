@@ -4,6 +4,52 @@ import {
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
 
+/* ============================
+   🟢 PUBLIC CONTROLLERS
+============================ */
+export const getAllActiveTestimonials = async (req, res) => {
+  try {
+    const page = +req.query.page || 1;
+    const limit = +req.query.limit || 10;
+    const search = req.query.search?.trim() || "";
+
+    const filter = { isActive: true };
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { designation: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const total = await Testimonial.countDocuments(filter);
+
+    const testimonials = await Testimonial.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .select(
+        "name designation description shortDescription avatar rating createdAt"
+      )
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: testimonials,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 /* =====================================
    🔒 Get All Testimonials (Admin)
    ===================================== */

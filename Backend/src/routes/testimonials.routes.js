@@ -8,9 +8,16 @@ import {
   updateTestimonial,
   partiallyUpdateTestimonial,
   destroyTestimonialById,
+  getAllActiveTestimonials,
 } from "../controllers/testimonial.controller.js";
 
 const router = Router();
+
+
+/* ================================
+   🟢 PUBLIC ROUTES
+================================ */
+router.get("/", getAllActiveTestimonials);
 
 // ✅ Get all testimonials (paginated)
 router.get("/", ensureAuth, getTestimonials);

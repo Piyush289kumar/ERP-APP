@@ -43,7 +43,7 @@ const routePrefix = "/api/v1";
 const allowedOrigins = [
   process.env.NEXT_FRONTEND_URL, // Next.js production site
   process.env.ADMIN_FRONTEND_URL, // Admin production site
-  // LAN access (mobile testing)
+  process.env.REACT_NATIVE_FRONTEND_URL, // React Native local
   "http://192.168.29.175:3000", // your Next.js IP on Wi-Fi
   "http://localhost:3000", // Next.js local
   "http://localhost:5173",
