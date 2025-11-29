@@ -5,6 +5,7 @@ import {
   uploadToCloudinary,
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
+import mongoose from "mongoose";
 
 // Format mongoose validation errors
 const formatErrors = (err) => {
@@ -34,12 +35,14 @@ export const getAllActiveCourses = async (req, res) => {
     // ------------------------------
     const matchQuery = { isActive: true };
 
-    // Category Filter
+    // FIX: Convert category IDs to ObjectIds
     if (categories.length > 0 && categories[0] !== "") {
-      matchQuery.category = { $in: categories };
+      matchQuery.category = {
+        $in: categories.map((id) => new mongoose.Types.ObjectId(id)),
+      };
     }
 
-    // Search Filter (title, description + category name)
+    // Search Filter (title, description, category name)
     const searchQuery = search
       ? {
           $or: [
@@ -56,7 +59,6 @@ export const getAllActiveCourses = async (req, res) => {
     const pipeline = [
       { $match: matchQuery },
 
-      // Join category
       {
         $lookup: {
           from: "categories",
@@ -65,12 +67,11 @@ export const getAllActiveCourses = async (req, res) => {
           as: "category",
         },
       },
+
       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
 
-      // Apply search here
       { $match: searchQuery },
 
-      // Sort & Pagination
       { $sort: { createdAt: -1 } },
       { $skip: (page - 1) * limit },
       { $limit: limit },
@@ -96,16 +97,14 @@ export const getAllActiveCourses = async (req, res) => {
       Course.aggregate(countPipeline),
     ]);
 
-    const total = countResult[0]?.total || 0;
-
     res.status(200).json({
       success: true,
       data: courses,
       pagination: {
-        total,
+        total: countResult[0]?.total || 0,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil((countResult[0]?.total || 0) / limit),
       },
     });
   } catch (err) {

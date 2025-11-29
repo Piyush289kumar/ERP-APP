@@ -4,6 +4,7 @@ import {
   uploadToCloudinary,
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
+import mongoose from "mongoose";
 
 // Format mongoose validation errors
 const formatErrors = (err) => {
@@ -22,34 +23,96 @@ const formatErrors = (err) => {
 
 export const getAllActiveBlogs = async (req, res) => {
   try {
-    const page = +req.query.page || 1;
-    const limit = +req.query.limit || 10;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
     const search = req.query.search?.trim() || "";
+    const categories = req.query.categories?.split(",") || [];
 
-    const filter = { isActive: true };
+    // ------------------------------
+    // Base Match Query
+    // ------------------------------
+    const matchQuery = { isActive: true };
 
-    if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+    // 🏷 CATEGORY FILTER
+    if (categories.length > 0 && categories[0] !== "") {
+      matchQuery.category = {
+        $in: categories.map((id) => new mongoose.Types.ObjectId(id)),
+      };
     }
 
-    const total = await Blog.countDocuments(filter);
-    const blogs = await Blog.find(filter)
-      .populate("category", "name slug")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    // 🔍 SEARCH by title, description, and category name
+    const searchQuery = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+            { "category.name": { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    // ------------------------------
+    // AGGREGATION PIPELINE
+    // ------------------------------
+    const pipeline = [
+      { $match: matchQuery },
+
+      // Join category data
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+      { $match: searchQuery },
+
+      { $sort: { createdAt: -1 } },
+
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+
+    // Count pipeline
+    const countPipeline = [
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      { $match: searchQuery },
+      { $count: "total" },
+    ];
+
+    const [blogs, countResult] = await Promise.all([
+      Blog.aggregate(pipeline),
+      Blog.aggregate(countPipeline),
+    ]);
+
+    const total = countResult[0]?.total || 0;
 
     res.status(200).json({
       success: true,
       data: blogs,
-      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error fetching blogs:", err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
