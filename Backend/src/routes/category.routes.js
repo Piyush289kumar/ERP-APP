@@ -5,12 +5,15 @@ import {
   destroyCategoryById,
   getCategories,
   getCategoryById,
+  getPublicCategories,
   partiallyUpdateCategory,
   updateCategory,
 } from "../controllers/category.controller.js";
 import upload from "../config/multer.js";
 
 const router = Router();
+
+router.get("/public", getPublicCategories);
 
 router.get("/", ensureAuth, getCategories);
 

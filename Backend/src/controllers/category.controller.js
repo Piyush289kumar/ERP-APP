@@ -1,6 +1,25 @@
 import slugify from "slugify";
 import Category from "../models/blogs/category.model.js";
-import { destroyFromCloudinary, uploadToCloudinary } from "../utils/cloudinaryService.js";
+import {
+  destroyFromCloudinary,
+  uploadToCloudinary,
+} from "../utils/cloudinaryService.js";
+
+export const getPublicCategories = async (req, res) => {
+  try {
+    // Fetch categories name
+    const categories = await Category.find()
+      .select("name")
+      .sort({ createdAt: -1 }) ;
+
+    return res.status(200).json({
+      message: "Categories Name fetched successfully.",
+      data: categories,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Error", error: error.message });
+  }
+};
 
 export const getCategories = async (req, res) => {
   try {

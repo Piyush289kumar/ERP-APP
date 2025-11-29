@@ -1,3 +1,8 @@
+### Get All Categories (Public)
+GET {{baseUrl}}/categories/public
+Accept: application/json
+
+
 ### Get All Categories (Protected)
 GET {{baseUrl}}/categories
 Authorization: Bearer {{token}}
