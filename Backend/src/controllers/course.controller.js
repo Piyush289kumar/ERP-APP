@@ -29,39 +29,75 @@ export const getAllActiveCourses = async (req, res) => {
     const search = req.query.search?.trim() || "";
     const categories = req.query.categories?.split(",") || [];
 
-    // --------------------------
-    // Build MongoDB Filter
-    // --------------------------
-    const filter = { isActive: true };
+    // ------------------------------
+    // Build Match Query
+    // ------------------------------
+    const matchQuery = { isActive: true };
 
-    // 🔍 SEARCH FILTER
-    if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
-    }
-
-    // 🏷 CATEGORY FILTER (multi-select)
+    // Category Filter
     if (categories.length > 0 && categories[0] !== "") {
-      filter.category = { $in: categories };
+      matchQuery.category = { $in: categories };
     }
 
-    // --------------------------
-    // Count + Fetch
-    // --------------------------
-    const total = await Course.countDocuments(filter);
+    // Search Filter (title, description + category name)
+    const searchQuery = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+            { "category.name": { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
 
-    const courses = await Course.find(filter)
-      .populate("category", "name slug")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    // ------------------------------
+    // AGGREGATION PIPELINE
+    // ------------------------------
+    const pipeline = [
+      { $match: matchQuery },
 
-    // --------------------------
-    // Response
-    // --------------------------
+      // Join category
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+      // Apply search here
+      { $match: searchQuery },
+
+      // Sort & Pagination
+      { $sort: { createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+
+    const countPipeline = [
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      { $match: searchQuery },
+      { $count: "total" },
+    ];
+
+    const [courses, countResult] = await Promise.all([
+      Course.aggregate(pipeline),
+      Course.aggregate(countPipeline),
+    ]);
+
+    const total = countResult[0]?.total || 0;
+
     res.status(200).json({
       success: true,
       data: courses,
