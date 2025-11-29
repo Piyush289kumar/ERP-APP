@@ -3,14 +3,29 @@ import mongoose from "mongoose";
 const { Schema, model } = mongoose;
 
 // ===============================================
-// 🧩 Contact Us Schema (Future-Proof + Admin Reply Support)
+// 🧩 Contact Us Schema (Supports Course & Franchise Forms)
 // ===============================================
 const contactUsSchema = new Schema(
   {
+    // 🔖 Form Type
+    type: {
+      type: String,
+      required: true,
+      enum: [
+        "course_inquiry",
+        "franchise_form",
+        "general_enquiry",
+        "career",
+        "event_booking",
+        "other",
+      ],
+      index: true,
+    },
+
     // 👤 User Details
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, "Full name is required"],
       trim: true,
       minlength: 2,
       maxlength: 100,
@@ -45,20 +60,14 @@ const contactUsSchema = new Schema(
       maxlength: 2000,
     },
 
-    // 🌐 Meta info
-    ipAddress: {
-      type: String,
-      trim: true,
-    },
-    userAgent: {
-      type: String,
-      trim: true,
-    },
+    // 🌐 Meta Info
+    ipAddress: { type: String, trim: true },
+    userAgent: { type: String, trim: true },
 
-    // 🧠 Dynamic fields for future scalability
+    // 🎯 Dynamic Fields (Course Inquiry + Franchise Form)
     meta: {
       type: Map,
-      of: Schema.Types.Mixed, // Allow any type (String, Number etc)
+      of: Schema.Types.Mixed,
       default: {},
     },
 
@@ -69,46 +78,25 @@ const contactUsSchema = new Schema(
       default: null,
     },
 
-    // 🚦 Status tracking
+    // 🚦 Status
     status: {
       type: String,
       enum: ["new", "in_progress", "answered", "closed"],
       default: "new",
     },
 
-    // 🧵 Admin Response (single response version)
+    // 🧵 Admin Response
     response: {
-      message: {
-        type: String,
-        trim: true,
-        maxlength: 2000,
-      },
-      respondedBy: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        default: null,
-      },
-      respondedAt: {
-        type: Date,
-      },
+      message: { type: String, trim: true, maxlength: 2000 },
+      respondedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      respondedAt: { type: Date },
     },
 
-    // 📜 Optional: Support multiple replies in the future
     replies: [
       {
-        message: {
-          type: String,
-          trim: true,
-          maxlength: 2000,
-        },
-        respondedBy: {
-          type: Schema.Types.ObjectId,
-          ref: "User",
-        },
-        respondedAt: {
-          type: Date,
-          default: Date.now,
-        },
+        message: { type: String, trim: true, maxlength: 2000 },
+        respondedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        respondedAt: { type: Date, default: Date.now },
       },
     ],
   },
@@ -120,16 +108,8 @@ const contactUsSchema = new Schema(
 );
 
 // ===============================================
-// ⚙️ Indexing for scalability
+// 🧠 Auto-update status on response
 // ===============================================
-contactUsSchema.index({ email: 1, createdAt: -1 });
-contactUsSchema.index({ status: 1 });
-
-// ===============================================
-// 🧠 Hooks (optional automation)
-// ===============================================
-
-// Auto-update status when admin replies
 contactUsSchema.pre("save", function (next) {
   if (this.response?.message && this.status !== "answered") {
     this.status = "answered";
@@ -138,8 +118,4 @@ contactUsSchema.pre("save", function (next) {
   next();
 });
 
-// ===============================================
-// 📦 Model Export
-// ===============================================
-const ContactUs = model("ContactUs", contactUsSchema);
-export default ContactUs;
+export default model("ContactUs", contactUsSchema);

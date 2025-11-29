@@ -1,11 +1,18 @@
 import ContactUs from "../models/contactus.model.js";
-
 /* ============================================================
    📌 CREATE ContactUs (Public)
 ============================================================ */
 export const createContactUs = async (req, res) => {
   try {
-    const { name, email, phone, subject, message, meta } = req.body;
+    const { type, name, email, phone, subject, message, meta } = req.body;
+
+    // Validate required fields
+    if (!type) {
+      return res.status(400).json({
+        status: "error",
+        message: "Form type is required.",
+      });
+    }
 
     if (!name || !email || !message) {
       return res.status(400).json({
@@ -14,21 +21,67 @@ export const createContactUs = async (req, res) => {
       });
     }
 
+    // ---------------------------------------------
+    // 🌟 EXTRA VALIDATION BASED ON TYPE
+    // ---------------------------------------------
+
+    if (type === "course_inquiry") {
+      if (!meta?.course_selection) {
+        return res.status(400).json({
+          status: "error",
+          message: "Course selection is required for Course Inquiry.",
+        });
+      }
+
+      if (meta?.terms_agreed !== true) {
+        return res.status(400).json({
+          status: "error",
+          message: "You must agree to the terms.",
+        });
+      }
+    }
+
+    if (type === "franchise_form") {
+      if (!meta?.occupation) {
+        return res.status(400).json({
+          status: "error",
+          message: "Occupation is required for Franchise Form.",
+        });
+      }
+      if (!meta?.state || !meta?.city) {
+        return res.status(400).json({
+          status: "error",
+          message: "State and City are required for Franchise Form.",
+        });
+      }
+      if (!meta?.floor_space_sqft) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Available floor space (sqft) is required for Franchise Form.",
+        });
+      }
+    }
+
+    // ---------------------------------------------
+    // 🌟 CREATE DOCUMENT
+    // ---------------------------------------------
     const contact = await ContactUs.create({
+      type,
       name,
       email,
       phone: phone || null,
       subject: subject || null,
       message,
+      meta: meta || {},
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
-      meta: meta || {},
       createdBy: req.user?._id || null,
     });
 
     return res.status(201).json({
       status: "success",
-      message: "Contact message submitted successfully.",
+      message: "Form submitted successfully.",
       data: contact,
     });
   } catch (error) {
