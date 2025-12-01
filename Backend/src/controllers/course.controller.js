@@ -131,6 +131,25 @@ export const getCourseById = async (req, res) => {
   }
 };
 
+export const getAllActiveCoursesNames = async (req, res) => {
+  try {
+    const course = await Course.find().select("title _id");
+
+    if (!course)
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+
+    res.status(200).json({
+      success: true,
+      data: course,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching courses name:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 /* ============================
    🔒 ADMIN — GET ALL COURSES
 ============================ */

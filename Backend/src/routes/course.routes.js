@@ -8,6 +8,7 @@ import {
   updateCourse,
   partiallyUpdateCourse,
   destroyCourseById,
+  getAllActiveCoursesNames,
 } from "../controllers/course.controller.js";
 
 import { ensureAuth } from "../middleware/authMiddleware.js";
@@ -20,6 +21,8 @@ const router = Router();
 ================================ */
 router.get("/", getAllActiveCourses);
 router.get("/:id", getCourseById);
+
+router.get("/public/name", getAllActiveCoursesNames);
 
 /* ================================
    🔒 ADMIN ROUTES

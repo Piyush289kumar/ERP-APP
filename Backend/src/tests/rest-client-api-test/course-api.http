@@ -14,6 +14,11 @@ Accept: application/json
 GET {{baseUrl}}/course/69258bc54a4b6921ecababdf
 Accept: application/json
 
+### Get All Courses Name
+GET {{baseUrl}}/course/public/name
+Accept: application/json
+
+
 ###
 
 /* ================================
