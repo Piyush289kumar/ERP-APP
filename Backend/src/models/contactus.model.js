@@ -55,7 +55,6 @@ const contactUsSchema = new Schema(
 
     message: {
       type: String,
-      required: [true, "Message is required"],
       trim: true,
       maxlength: 2000,
     },

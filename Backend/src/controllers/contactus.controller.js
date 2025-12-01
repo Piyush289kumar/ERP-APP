@@ -1,4 +1,6 @@
 import ContactUs from "../models/contactus.model.js";
+
+
 /* ============================================================
    📌 CREATE ContactUs (Public)
 ============================================================ */
@@ -14,10 +16,10 @@ export const createContactUs = async (req, res) => {
       });
     }
 
-    if (!name || !email || !message) {
+    if (!name || !email) {
       return res.status(400).json({
         status: "error",
-        message: "Name, email and message are required.",
+        message: "Name & email are required.",
       });
     }
 
