@@ -15,10 +15,10 @@ export const createContactUs = async (req, res) => {
       });
     }
 
-    if (!name || !email) {
+    if (!name || !phone) {
       return res.status(400).json({
         status: "error",
-        message: "Name & email are required.",
+        message: "Name & Phone are required.",
       });
     }
 
