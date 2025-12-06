@@ -43,6 +43,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    console.log("📥 Incoming login payload:", req.body);
     let { email, password } = req.body;
 
     // Normalize email (avoid case sensitivity issues)
@@ -62,6 +63,7 @@ export const login = async (req, res) => {
 
     // Generic error (avoid telling which field is incorrect for security)
     if (!user) {
+      console.error("Login error: Invalid email or password for email e:", email);
       return res.status(401).json({
         status: "error",
         message: "Invalid email or password.",
@@ -71,6 +73,7 @@ export const login = async (req, res) => {
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.error("Login error: password match:", email);
       return res.status(401).json({
         status: "error",
         message: "Invalid email or password.",
@@ -94,7 +97,6 @@ export const login = async (req, res) => {
         email: user.email,
       },
     });
-
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({

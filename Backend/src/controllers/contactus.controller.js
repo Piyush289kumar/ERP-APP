@@ -1,6 +1,5 @@
 import ContactUs from "../models/contactus.model.js";
 
-
 /* ============================================================
    📌 CREATE ContactUs (Public)
 ============================================================ */
@@ -32,13 +31,6 @@ export const createContactUs = async (req, res) => {
         return res.status(400).json({
           status: "error",
           message: "Course selection is required for Course Inquiry.",
-        });
-      }
-
-      if (meta?.terms_agreed !== true) {
-        return res.status(400).json({
-          status: "error",
-          message: "You must agree to the terms.",
         });
       }
     }
